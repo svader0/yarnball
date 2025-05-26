@@ -1,0 +1,20 @@
+# Print a pyramid of '*' characters where the base of the pyramid is n characters wide.
+
+pattern printrow() = (
+    dup         # Duplicate the current width
+    rep (       # Loop to print '*' for the current row
+        ch 42 pic
+        ch 32 pic   # Print a space after each '*'
+    )
+    sc
+)
+
+ch 25          # Push the base width of the pyramid
+dup
+rep (          # Loop for each row
+    dup         # Duplicate the current width
+    use printrow  # Print the row of '*'
+    ch 10 pic   # Print a newline
+    dup ch 1 hdc   # Subtract 1 for the next row
+)
+FO          # End of program

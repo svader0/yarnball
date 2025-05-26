@@ -1,7 +1,7 @@
 # Yarnball Specification
 ## 1. Introduction
 
-**Yarnball** is an esoteric, stack-based programming language whose every instruction reads like a crochet pattern.  You can literally hand this “pattern” to a crocheter and they’ll work through it—though what they produce won’t be much more than a random string of stitches.  Under the hood, each stitch manipulates a stack of integers.
+**Yarnball** is an esoteric, stack-based programming language whose every instruction reads like a crochet pattern.  You can literally hand this “pattern” to a crochet artist and they’ll work through it. Though, what they produce won’t be much more than a random string of stitches.  Under the hood, each stitch manipulates a stack of integers.
 
 ---
 
@@ -55,7 +55,7 @@ All pop the required operands, compute, then push the integer result.
 | Stitch          | Mnemonic | Operation                 | Example                       |
 | --------------- | -------- | ------------------------- | ----------------------------- |
 | Bobble          | `bob`    | Pop `a,b`; push `b + a`   | `ch 2 ch 3 bob` ⇒ stack `[5]` |
-| Half-Double Cro | `hdc`    | Pop `a,b`; push `b − a`   | `ch 5 ch 2 hdc` ⇒ `[3]`       |
+| Half-Double Crochet | `hdc`    | Pop `a,b`; push `b − a`   | `ch 5 ch 2 hdc` ⇒ `[3]`       |
 | Double Crochet  | `dc`    | Pop `a,b`; push `b × a`   | `ch 3 ch 4 dc` ⇒ `[12]`      |
 | Treble Crochet  | `tr`    | Pop `a,b`; push `⌊b ÷ a⌋` | `ch 8 ch 3 tr` ⇒ `[2]`       |
 | Cluster (mod)   | `cl`    | Pop `a,b`; push `b mod a` | `ch 5 ch 12 cl` ⇒ `[2]`      |

@@ -11,5 +11,5 @@ Row 10: ch 114 pic   # 'r'
 Row 11: ch 108 pic   # 'l'
 Row 12: ch 100 pic   # 'd'
 Row 13: ch 33 pic    # '!'
-Row 14: yo          # print “!” + newline
+Row 14: ch 10 pic    # '\n'
 Row 15: FO          # end of program
