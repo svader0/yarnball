@@ -1,15 +1,25 @@
-Row 1:  ch 72 pic    # 'H'
-Row 2:  ch 101 pic   # 'e'
-Row 3:  ch 108 pic   # 'l'
-Row 4:  ch 108 pic   # 'l'
-Row 5:  ch 111 pic   # 'o'
-Row 6:  ch 44 pic    # ','
-Row 7:  ch 32 pic    # ' '
-Row 8:  ch 87 pic    # 'W'
-Row 9:  ch 111 pic   # 'o'
-Row 10: ch 114 pic   # 'r'
-Row 11: ch 108 pic   # 'l'
-Row 12: ch 100 pic   # 'd'
-Row 13: ch 33 pic    # '!'
-Row 14: ch 10 pic    # '\n'
-Row 15: FO          # end of program
+FRIENDLY GREETING SCARF!
+This stylish scarf features a friendly greeting!
+
+ABBREVIATIONS:
+
+ch = "chain"
+pic = "picot stitch"
+
+INSTRUCTIONS:
+
+Row 1:  ch 72 pic
+Row 2:  ch 101 pic
+Row 3:  ch 108 pic
+Row 4:  ch 108 pic
+Row 5:  ch 111 pic
+Row 6:  ch 44 pic
+Row 7:  ch 32 pic
+Row 8:  ch 87 pic
+Row 9:  ch 111 pic
+Row 10: ch 114 pic
+Row 11: ch 108 pic
+Row 12: ch 100 pic
+Row 13: ch 33 pic
+Row 14: ch 10 pic
+Row 15: FO 

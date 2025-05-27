@@ -21,15 +21,15 @@
 * **`rep` syntax**
 
   ```
-  rep [<count>] (<instr1>, <instr2>, …)
+  rep [<count>] (<instr1>, <instr2>, …)   OR
+  *[<instruction(s)>]; rep from * <count> more times
   ```
 
-  * If `<count>` is present, it doesn't have to be a literal; it can be any expression that evaluates to a non-negative integer.
   * If omitted, the interpreter **pops** a count from the stack.
 
 * **Termination**
 
-  * The `FO` stitch immediately stops execution.
+  * The `FO` stitch immediately stops execution of the program.
   * Falling off the end (no more instructions) also halts.
   * Only `yo` and `pic` produce visible output; `FO` does not implicitly print.
 
@@ -80,7 +80,7 @@ rep [<count>] (<instr1>, <instr2>, …)
 
 ---
 
-## 4. (Optional) Function-Patterns
+## 4. Function-Patterns
 
 To avoid repetition, you can **define** and **invoke** named blocks:
 
@@ -90,10 +90,11 @@ To avoid repetition, you can **define** and **invoke** named blocks:
 <invoke>      ::= "use"     <Name> [ "(" <arg1>,… ")" ]
 
 ```
+Patterns can be called within other patterns, allowing for nested definitions.
 
-* **Definition**: parameters become local stack variables; arguments are pushed before execution.
-* **Invocation**: executes the block in-place.
-* Patterns can be called within other patterns, allowing for nested definitions.
+## STITCH GUIDE
+* “rep from * 2 more times” means execute instructions inside the asterisk-labeled section a total of 3 times.
+* You can also declare patterns under a “STITCH GUIDE” heading to mimic real crochet notation.
 
 **Example**:
 

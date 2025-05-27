@@ -9,6 +9,7 @@ import (
 	"github.com/svader0/yarnball/pkg/evaluator"
 	"github.com/svader0/yarnball/pkg/lexer"
 	"github.com/svader0/yarnball/pkg/parser"
+	"github.com/svader0/yarnball/pkg/preprocessor"
 )
 
 // TODO:
@@ -81,6 +82,13 @@ func runFile(path string) error {
 		return err
 	}
 	input := string(data)
+
+	// Preprocess the input before lexing/parsing
+	pre := preprocessor.New()
+	input, err = pre.Process(input)
+	if err != nil {
+		return fmt.Errorf("Preprocessing error: %v", err)
+	}
 
 	// Process the entire file as a single program
 	l := lexer.New(input)

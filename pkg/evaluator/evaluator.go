@@ -10,13 +10,13 @@ import (
 
 type Evaluator struct {
 	stack    *stack.Stack
-	patterns map[string]*parser.PatternDef
+	patterns map[string]*parser.SubpatternDef
 }
 
 func New() *Evaluator {
 	return &Evaluator{
 		stack:    stack.New(),
-		patterns: make(map[string]*parser.PatternDef),
+		patterns: make(map[string]*parser.SubpatternDef),
 	}
 }
 
@@ -37,8 +37,8 @@ func (e *Evaluator) Eval(prog *parser.Program) error {
 			if err := e.execRep(node); err != nil {
 				return err
 			}
-		case *parser.PatternDef:
-			e.patterns[node.Name] = node // Store the pattern
+		case *parser.SubpatternDef:
+			e.patterns[node.Name] = node
 		case *parser.UseInstr:
 			if err := e.execUse(node); err != nil {
 				return err
@@ -49,6 +49,10 @@ func (e *Evaluator) Eval(prog *parser.Program) error {
 }
 
 func (e *Evaluator) exec(instr parser.Instruction) error {
+	fmt.Println("Executing instruction:", instr.TokenLiteral())
+	fmt.Println("Current stack:", e.stack)
+	fmt.Println("Patterns:", e.patterns)
+	fmt.Println("Instruction type:", fmt.Sprintf("%T", instr))
 	switch node := instr.(type) {
 	case *parser.SimpleInstr:
 		return e.execSimple(node)
@@ -56,8 +60,8 @@ func (e *Evaluator) exec(instr parser.Instruction) error {
 		return e.execRep(node)
 	case *parser.UseInstr:
 		return e.execUse(node)
-	case *parser.PatternDef:
-		e.patterns[node.Name] = node // Store the pattern definition
+	case *parser.SubpatternDef:
+		e.patterns[node.Name] = node
 		return nil
 	default:
 		return fmt.Errorf("unknown instruction type: %T", instr)
@@ -67,28 +71,24 @@ func (e *Evaluator) exec(instr parser.Instruction) error {
 func (e *Evaluator) execUse(ui *parser.UseInstr) error {
 	pat, exists := e.patterns[ui.Name]
 	if !exists {
-		return fmt.Errorf("undefined pattern %q", ui.Name)
+		return fmt.Errorf("undefined subpattern %q", ui.Name)
 	}
 
-	// Push arguments onto the stack
-	for _, arg := range ui.Args {
-		n, _ := strconv.Atoi(arg)
-		e.stack.Push(n)
-	}
-	// Execute the instructions in the pattern
 	for _, instr := range pat.Body {
 		if err := e.exec(instr); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
 func (e *Evaluator) execSimple(si *parser.SimpleInstr) error {
 	switch si.Token {
 	case "ch":
-		n, _ := strconv.Atoi(si.Args[0])
+		n, err := strconv.Atoi(si.Args[0])
+		if err != nil {
+			return fmt.Errorf("ch: invalid argument %q: %w", si.Args[0], err)
+		}
 		e.stack.Push(n)
 	case "pic":
 		n, err := e.stack.Pop()
@@ -102,7 +102,8 @@ func (e *Evaluator) execSimple(si *parser.SimpleInstr) error {
 			return fmt.Errorf("yo: %w", err)
 		}
 		fmt.Println(n)
-	case "FO":
+	case "fo":
+		// terminate program
 		return fmt.Errorf("FO: halt")
 	case "sc":
 		// pop top value
@@ -199,12 +200,8 @@ func (e *Evaluator) execSimple(si *parser.SimpleInstr) error {
 			return fmt.Errorf("slst: stack underflow")
 		}
 
-		top, err := e.stack.Pop()
-		if err != nil {
-			return fmt.Errorf("slst: %w", err)
-		}
-		e.stack.Push(top) // push back the top element
-		e.stack.Push(top) // duplicate it
+		top, _ := e.stack.Peek()
+		e.stack.Push(top)
 	case "swap":
 		if e.stack.Size() < 2 {
 			return fmt.Errorf("swap: stack underflow")
@@ -219,9 +216,6 @@ func (e *Evaluator) execSimple(si *parser.SimpleInstr) error {
 		}
 		e.stack.Push(a)
 		e.stack.Push(b)
-	case "dup":
-		top, _ := e.stack.Peek()
-		e.stack.Push(top) // duplicate top element
 	case "inc":
 		if e.stack.IsEmpty() {
 			return fmt.Errorf("inc: stack underflow")
@@ -250,26 +244,23 @@ func (e *Evaluator) execSimple(si *parser.SimpleInstr) error {
 
 func (e *Evaluator) execRep(ri *parser.RepInstr) error {
 	var count int
+	var err error
+
 	if ri.CountExpr != "" {
-		// Evaluate the count expression
-		var err error
 		count, err = strconv.Atoi(ri.CountExpr)
 		if err != nil {
-			return fmt.Errorf("rep: invalid count expression: %w", err)
+			return fmt.Errorf("rep: invalid count %q: %w", ri.CountExpr, err)
 		}
 	} else {
-		// Pop the count from the stack
 		if e.stack.IsEmpty() {
 			return fmt.Errorf("rep: stack underflow")
 		}
-		var err error
 		count, err = e.stack.Pop()
 		if err != nil {
 			return fmt.Errorf("rep: %w", err)
 		}
 	}
 
-	// Execute the body of the loop `count` times
 	for i := 0; i < count; i++ {
 		for _, instr := range ri.Body {
 			if err := e.exec(instr); err != nil {

@@ -20,64 +20,53 @@ const (
 	EOF     = "EOF"
 
 	// Literals
-	IDENT = "IDENT" // names, pattern names, or unknown mnemonics
+	IDENT = "IDENT" // names, subpattern names, or unknown mnemonics
 	INT   = "INT"
 
 	// Delimiters
-	LPAREN = "("
-	RPAREN = ")"
-	COMMA  = ","
-	COLON  = ":"
+	LPAREN    = "("
+	RPAREN    = ")"
+	SEMICOLON = ";"
+	ASTERISK  = "*"
 
 	// Keywords / Stitch mnemonics
-	CH      = "CH"
-	SC      = "SC"
-	DC      = "DC"
-	HDC     = "HDC"
-	TR      = "TR"
-	CL      = "CL"
-	INC     = "INC"
-	DEC     = "DEC"
-	ADD     = "ADD" // bob/add
-	MUL     = "MUL"
-	DIV     = "DIV"
-	SUB     = "SUB"
-	MOD     = "MOD"
-	DUP     = "DUP"
-	SWAP    = "SWAP"
-	SLST    = "SLST" // slip‐stitch; parser may want to combine "sl" "st"
-	YO      = "YO"
-	PIC     = "PIC"
-	REP     = "REP"
-	FO      = "FO"
-	PATTERN = "PATTERN"
-	USE     = "USE"
+	CH         = "CH"
+	SC         = "SC"
+	DC         = "DC"
+	HDC        = "HDC"
+	TR         = "TR"
+	CL         = "CL"
+	INC        = "INC"
+	DEC        = "DEC"
+	SWAP       = "SWAP"
+	SLST       = "SLST" // slip‐stitch; parser may want to combine "sl" "st"
+	YO         = "YO"
+	PIC        = "PIC"
+	REP        = "REP"
+	FO         = "FO"
+	SUBPATTERN = "SUBPATTERN"
+	USE        = "USE"
+	BOB        = "BOB"
 )
 
 var keywords = map[string]TokenType{
-	"ch":      CH,
-	"sc":      SC,
-	"dc":      DC,
-	"hdc":     HDC,
-	"tr":      TR,
-	"cl":      CL,
-	"inc":     INC,
-	"dec":     DEC,
-	"add":     ADD,
-	"bob":     ADD,
-	"mul":     MUL,
-	"div":     DIV,
-	"sub":     SUB,
-	"mod":     MOD,
-	"dup":     DUP,
-	"swap":    SWAP,
-	"slst":    SLST,
-	"yo":      YO,
-	"pic":     PIC,
-	"rep":     REP,
-	"fo":      FO,
-	"pattern": PATTERN,
-	"use":     USE,
+	"ch":         CH,
+	"sc":         SC,
+	"dc":         DC,
+	"hdc":        HDC,
+	"tr":         TR,
+	"cl":         CL,
+	"inc":        INC,
+	"dec":        DEC,
+	"bob":        BOB,
+	"swap":       SWAP,
+	"sl st":      SLST,
+	"yo":         YO,
+	"pic":        PIC,
+	"rep":        REP,
+	"fo":         FO,
+	"subpattern": SUBPATTERN,
+	"use":        USE,
 }
 
 type Lexer struct {
@@ -95,7 +84,7 @@ func New(input string) *Lexer {
 	if strings.HasPrefix(input, "\uFEFF") {
 		input = strings.TrimPrefix(input, "\uFEFF")
 	}
-	// normalize non-breaking spaces → regular spaces
+	// normalize non-breaking spaces -> regular spaces
 	input = strings.ReplaceAll(input, "\u00A0", " ")
 
 	// remove comments
@@ -139,7 +128,7 @@ func (l *Lexer) peekChar() byte {
 func (l *Lexer) NextToken() Token {
 	var tok Token
 
-	// skip whitespace and comments
+	// skip whitespace and comments if they haven't been caught by the preprocessor
 	for {
 		if l.ch == ' ' || l.ch == '\t' || l.ch == '\r' || l.ch == '\n' {
 			l.readChar()
@@ -152,19 +141,34 @@ func (l *Lexer) NextToken() Token {
 			break
 		}
 	}
+	// ignore commas
+	if l.ch == ',' {
+		l.readChar()
+	}
 
 	tok.Line = l.Line
 	tok.Column = l.Column
+
+	if len(l.input)-l.position >= 5 &&
+		strings.EqualFold(l.input[l.position:l.position+5], "sl st") {
+		tok.Type = SLST
+		tok.Literal = "slst"
+		// consume all 5 chars: 's','l',' ','s','t'
+		for i := 0; i < 5; i++ {
+			l.readChar()
+		}
+		return tok
+	}
 
 	switch l.ch {
 	case '(':
 		tok = newToken(LPAREN, l.ch, tok.Line, tok.Column)
 	case ')':
 		tok = newToken(RPAREN, l.ch, tok.Line, tok.Column)
-	case ',':
-		tok = newToken(COMMA, l.ch, tok.Line, tok.Column)
-	case ':':
-		tok = newToken(COLON, l.ch, tok.Line, tok.Column)
+	case ';':
+		tok = newToken(SEMICOLON, l.ch, tok.Line, tok.Column)
+	case '*':
+		tok = newToken(ASTERISK, l.ch, tok.Line, tok.Column)
 	case 0:
 		tok.Type = EOF
 		tok.Literal = ""

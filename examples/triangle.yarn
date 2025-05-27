@@ -1,20 +1,25 @@
-# Print a pyramid of '*' characters where the base of the pyramid is n characters wide.
+PYRAMID BRUNCH TOTE!
 
-pattern printrow() = (
-    dup         # Duplicate the current width
-    rep (       # Loop to print '*' for the current row
-        ch 42 pic
-        ch 32 pic   # Print a space after each '*'
-    )
-    sc
+This stylish tote bag features a pyramid design! 
+The base of the pyramid is is determined by the initial chain length, 
+and each row decreases in width by one stitch until it reaches the top.
+
+ABBREVIATIONS:
+
+ch = "chain"
+hdc = "half double crochet"
+pic = "picot stitch"
+rep = "repeat"
+
+STITCH GUIDE:
+
+subpattern printrow = (
+    Row 1: sl st *ch 42 pic ch 32 pic; rep from * 
+    Row 2: sc 
 )
 
-ch 25          # Push the base width of the pyramid
-dup
-rep (          # Loop for each row
-    dup         # Duplicate the current width
-    use printrow  # Print the row of '*'
-    ch 10 pic   # Print a newline
-    dup ch 1 hdc   # Subtract 1 for the next row
-)
-FO          # End of program
+INSTRUCTIONS:
+
+Row 1: ch 25        # Base width
+Row 2: sl st
+Row 3: * sl st use printrow ch 10 pic sl st ch 1 hdc; rep from * FO
