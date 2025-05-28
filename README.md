@@ -34,8 +34,8 @@ make repl
 ## Repository Structure
 
 - [cmd/main.go](cmd/main.go) - The application entry point that initializes the Yarnball interpreter.
-- [pkg/evaluator/evaluator.go](pkg/evaluator/evaluator.go) - Implements the evaluator that processes Yarnball instructions.
-- [pkg/lexer/lexer.go](pkg/lexer/lexer.go) and [pkg/parser/](pkg/parser/) - Responsible for lexing Yarnball source code into tokens.
+- [pkg/evaluator](pkg/evaluator/evaluator.go) - Implements the evaluator that processes Yarnball instructions.
+- [pkg/lexer](pkg/lexer/lexer.go) - Responsible for lexing Yarnball source code into tokens.
 - [pkg/preprocessor/preprocessor.go](pkg/preprocessor/preprocessor.go) - Preprocesses Yarnball source code, handling comments and whitespace and other aesthetic features of the language.
 - [pkg/parser/parser.go](pkg/parser/parser.go) - Parses Yarnball source code into an abstract syntax tree (AST).
 - [docs/specification.md](docs/specification.md) - Provides a detailed description of Yarnball’s instructions and behavior.
