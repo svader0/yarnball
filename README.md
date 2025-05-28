@@ -1,8 +1,8 @@
 # Yarnball
 
-Yarnball is an esoteric, stack-based programming language where every instruction reads like a crochet pattern. Inspired by crochet terminology, Yarnball allows you to write programs that resemble crochet patterns. 
+Yarnball is an esoteric, stack-based programming language where every instruction reads like a crochet pattern.
 
-As of now, the language is in its early stages, with a minimal set of instructions. In addition, it's pretty obvious that the language isn't actually a crochet pattern, but in the future, I would like for a Yarnball program to be indistinguishable from a real crochet pattern.
+As of now, the language is in its early stages, with a minimal set of instructions. Currently, it's pretty obvious that what you're reading isn't actually a crochet pattern, but in the future, I would like for a Yarnball program to be indistinguishable from a real crochet pattern.
 
 ## What is Yarnball?
 
