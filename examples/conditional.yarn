@@ -1,0 +1,27 @@
+STITCH GUIDE:
+
+subpattern foo = (
+    ch 70 pic # Push ASCII 'F' ( ASCII 70) and print it
+    ch 79 pic # etc...
+    ch 79 pic
+)
+
+subpattern bar = (
+    ch 66 pic # Push ASCII 'B' ( ASCII 66) and print it
+    ch 65 pic # etc...
+    ch 82 pic
+)
+
+INSTRUCTIONS:
+
+ch 15          # Push 15 onto the stack
+ch 10          # Push 10 onto the stack  
+>           # pop 2, Compare if 15 > 10, if so push 1 otherwise push 0
+if
+    use foo 
+else 
+    use bar  
+end            # End conditional block
+
+ch 33 pic 
+ch 10 pic

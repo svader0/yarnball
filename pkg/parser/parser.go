@@ -31,7 +31,7 @@ func (p *Parser) ParseProgram() (*Program, error) {
 			return nil, err
 		}
 		prog.Instructions = append(prog.Instructions, instr)
-		p.nextToken()
+
 	}
 	return prog, nil
 }
@@ -48,12 +48,17 @@ func (p *Parser) parseInstruction() (Instruction, error) {
 		return p.parseRep()
 	case lexer.IDENT:
 		return &UseInstr{Name: p.cur.Literal}, nil
-		// All zero-arg stitches
+	case lexer.IF:
+		return p.parseIf()
 	case lexer.SC, lexer.SLST, lexer.SWAP,
 		lexer.INC, lexer.DEC, lexer.BOB,
 		lexer.HDC, lexer.DC, lexer.TR, lexer.CL,
+		lexer.GREATERTHAN, lexer.LESSERTHAN, lexer.TURN,
+		lexer.EQUALS, lexer.NOTEQUALS,
 		lexer.YO, lexer.PIC, lexer.FO:
-		return &SimpleInstr{Token: p.cur.Literal}, nil
+		instr := &SimpleInstr{Token: p.cur.Literal}
+		p.nextToken() // consume the instruction token
+		return instr, nil
 	default:
 		return nil, fmt.Errorf("unexpected token %q at line %d", p.cur.Literal, p.cur.Line)
 	}
@@ -65,6 +70,7 @@ func (p *Parser) parseCh() (Instruction, error) {
 	// If next token is INT, just store it
 	if p.cur.Type == lexer.INT {
 		instr.Args = append(instr.Args, p.cur.Literal)
+		p.nextToken() // consume INT
 	} else {
 		return nil, fmt.Errorf("expected INT after ch, got %s", p.cur.Literal)
 	}
@@ -72,32 +78,34 @@ func (p *Parser) parseCh() (Instruction, error) {
 }
 
 func (p *Parser) parseSubpattern() (Instruction, error) {
-	// subpattern Name(opt params) = ( instr… )
-	p.nextToken() // consume 'subpattern' token
+	p.nextToken() // consume 'subpattern' keyword
 	if p.cur.Type != lexer.IDENT {
 		return nil, fmt.Errorf("expected subpattern name, got %s", p.cur.Literal)
 	}
 	pat := &SubpatternDef{Name: p.cur.Literal}
 
+	// Expect '='
 	if p.peek.Literal != "=" {
 		return nil, fmt.Errorf("expected '=', got %s", p.peek.Literal)
 	}
+	p.nextToken() // consume name
 	p.nextToken() // consume '='
 
-	// body
-	if p.peek.Type != lexer.LPAREN {
-		return nil, fmt.Errorf("expected '(', got %s", p.peek.Literal)
+	// Now p.cur should be the '(' token.
+	if p.cur.Type != lexer.LPAREN {
+		return nil, fmt.Errorf("expected '(', got %s", p.cur.Literal)
 	}
-	p.nextToken() // consume '('
-	p.nextToken()
+	p.nextToken() // consume '(' and move to the first token in the subpattern body
+
+	// Parse instructions until closing ')'
 	for p.cur.Type != lexer.RPAREN && p.cur.Type != lexer.EOF {
 		instr, err := p.parseInstruction()
 		if err != nil {
 			return nil, err
 		}
 		pat.Body = append(pat.Body, instr)
-		p.nextToken()
 	}
+	p.nextToken() // consume ')'
 	return pat, nil
 }
 
@@ -107,17 +115,22 @@ func (p *Parser) parseUse() (Instruction, error) {
 		return nil, fmt.Errorf("expected subpattern name, got %s", p.cur.Literal)
 	}
 	use := &UseInstr{Name: p.cur.Literal}
+	p.nextToken() // advance past the IDENT token
 
-	if p.peek.Type == lexer.LPAREN {
+	// If there is a parameter list, consume it.
+	if p.cur.Type == lexer.LPAREN {
 		p.nextToken() // consume '('
-		p.nextToken()
-		for p.cur.Type != lexer.RPAREN {
+		for p.cur.Type != lexer.RPAREN && p.cur.Type != lexer.EOF {
 			if p.cur.Type != lexer.INT && p.cur.Type != lexer.IDENT {
 				return nil, fmt.Errorf("expected INT or IDENT arg, got %s", p.cur.Literal)
 			}
 			use.Args = append(use.Args, p.cur.Literal)
 			p.nextToken()
 		}
+		if p.cur.Type != lexer.RPAREN {
+			return nil, fmt.Errorf("expected RPAREN, got %s", p.cur.Literal)
+		}
+		p.nextToken() // consume ')'
 	}
 	return use, nil
 }
@@ -126,51 +139,91 @@ func (p *Parser) parseUse() (Instruction, error) {
 func (p *Parser) parseRep() (Instruction, error) {
 	ri := &RepInstr{}
 
-	// consume '*'
+	// Consume the '*' that starts the rep block.
 	p.nextToken()
 
-	// parse body until ';'
+	// Parse the rep block body until we hit a semicolon.
 	for p.cur.Type != lexer.SEMICOLON && p.cur.Type != lexer.EOF {
 		instr, err := p.parseInstruction()
 		if err != nil {
 			return nil, err
 		}
 		ri.Body = append(ri.Body, instr)
-		p.nextToken()
+		// Removed extra p.nextToken() here.
 	}
+
 	if p.cur.Type != lexer.SEMICOLON {
-		return nil, fmt.Errorf("expected ';' after crochet block, got %s", p.cur.Literal)
+		return nil, fmt.Errorf("expected ';' after rep block, got %q at line %d", p.cur.Literal, p.cur.Line)
 	}
-	// consume ';'
+	// Consume the semicolon.
 	p.nextToken()
 
-	// expect 'rep'
+	// Next, expect the 'rep' keyword.
 	if p.cur.Type != lexer.REP {
-		return nil, fmt.Errorf("expected 'rep' after ';', got %s", p.cur.Literal)
+		return nil, fmt.Errorf("expected 'rep' after ';', got %q at line %d", p.cur.Literal, p.cur.Line)
 	}
-	p.nextToken()
+	p.nextToken() // Consume 'rep'
 
-	// expect 'from'
+	// Expect the literal "from"
 	if p.cur.Literal != "from" {
-		return nil, fmt.Errorf("expected 'from' after 'rep', got %s", p.cur.Literal)
+		return nil, fmt.Errorf("expected 'from' after 'rep', got %q at line %d", p.cur.Literal, p.cur.Line)
 	}
-	p.nextToken()
+	p.nextToken() // Consume "from"
 
-	// expect '*'
+	// Expect an asterisk '*' for the count.
 	if p.cur.Type != lexer.ASTERISK {
-		return nil, fmt.Errorf("expected '*' after 'from', got %s", p.cur.Literal)
+		return nil, fmt.Errorf("expected '*' after 'from', got %q at line %d", p.cur.Literal, p.cur.Line)
 	}
-	p.nextToken()
+	p.nextToken() // Consume '*'
 
-	// optional INT count
+	// Optionally, consume INT count.
 	if p.cur.Type == lexer.INT {
 		ri.CountExpr = p.cur.Literal
 		p.nextToken()
 	}
-	// optional 'times'
+
+	// Optionally, consume a 'times' keyword.
 	if p.cur.Type == lexer.IDENT && p.cur.Literal == "times" {
-		p.nextToken() // consume "times" so it doesn’t become a UseInstr
+		p.nextToken()
 	}
 
 	return ri, nil
+}
+
+func (p *Parser) parseIf() (Instruction, error) {
+	// Consume the 'if' token
+	p.nextToken()
+
+	var ifBody []Instruction
+	// Parse IF branch until we hit ELSE or END
+	for p.cur.Type != lexer.ELSE && p.cur.Type != lexer.END && p.cur.Type != lexer.EOF {
+		instr, err := p.parseInstruction()
+		if err != nil {
+			return nil, err
+		}
+		ifBody = append(ifBody, instr)
+		// Do not call p.nextToken() here; let each parse* function consume its tokens.
+	}
+
+	var elseBody []Instruction
+	// If an ELSE is encountered, parse ELSE branch
+	if p.cur.Type == lexer.ELSE {
+		p.nextToken() // consume 'else'
+		for p.cur.Type != lexer.END && p.cur.Type != lexer.EOF {
+			instr, err := p.parseInstruction()
+			if err != nil {
+				return nil, err
+			}
+			elseBody = append(elseBody, instr)
+		}
+	}
+
+	// Make sure we have an END token
+	if p.cur.Type != lexer.END {
+		return nil, fmt.Errorf("expected 'end' token, got %q at line %d", p.cur.Literal, p.cur.Line)
+	}
+	// Consume the END token
+	p.nextToken()
+
+	return &IfInstr{IfBody: ifBody, ElseBody: elseBody}, nil
 }
