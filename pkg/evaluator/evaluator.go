@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"fmt"
+	"log/slog"
 	"strconv"
 
 	"github.com/svader0/yarnball/pkg/parser"
@@ -9,12 +10,14 @@ import (
 )
 
 type Evaluator struct {
+	log      *slog.Logger
 	stack    *stack.Stack
 	patterns map[string]*parser.SubpatternDef
 }
 
-func New() *Evaluator {
+func New(logger *slog.Logger) *Evaluator {
 	return &Evaluator{
+		log:      logger,
 		stack:    stack.New(),
 		patterns: make(map[string]*parser.SubpatternDef),
 	}
@@ -27,32 +30,22 @@ func (e *Evaluator) Stack() *stack.Stack {
 }
 
 func (e *Evaluator) Eval(prog *parser.Program) error {
+	e.log.Debug("Starting evaluation of program", "instructions", len(prog.Instructions))
 	for _, instr := range prog.Instructions {
-		switch node := instr.(type) {
-		case *parser.SimpleInstr:
-			if err := e.execSimple(node); err != nil {
-				return err
-			}
-		case *parser.RepInstr:
-			if err := e.execRep(node); err != nil {
-				return err
-			}
-		case *parser.SubpatternDef:
-			e.patterns[node.Name] = node
-		case *parser.UseInstr:
-			if err := e.execUse(node); err != nil {
-				return err
-			}
+		e.log.Debug("Evaluating instruction", "instruction", instr.TokenLiteral())
+		// Execute the instruction based on its type
+		fmt.Println("Executing instruction:", instr.TokenLiteral())
+		if err := e.exec(instr); err != nil {
+			e.log.Error("Error executing instruction", "instruction", instr.TokenLiteral(), "error", err)
+			return fmt.Errorf("error executing instruction %s: %w", instr.TokenLiteral(), err)
 		}
+		fmt.Println("Stack after instruction:", e.stack)
+		e.log.Debug("Instruction executed successfully", "instruction", instr.TokenLiteral())
 	}
 	return nil
 }
 
 func (e *Evaluator) exec(instr parser.Instruction) error {
-	fmt.Println("Executing instruction:", instr.TokenLiteral())
-	fmt.Println("Current stack:", e.stack)
-	fmt.Println("Patterns:", e.patterns)
-	fmt.Println("Instruction type:", fmt.Sprintf("%T", instr))
 	switch node := instr.(type) {
 	case *parser.SimpleInstr:
 		return e.execSimple(node)
@@ -63,12 +56,15 @@ func (e *Evaluator) exec(instr parser.Instruction) error {
 	case *parser.SubpatternDef:
 		e.patterns[node.Name] = node
 		return nil
+	case *parser.IfInstr:
+		return e.execIf(node)
 	default:
 		return fmt.Errorf("unknown instruction type: %T", instr)
 	}
 }
 
 func (e *Evaluator) execUse(ui *parser.UseInstr) error {
+	e.log.Debug("Using subpattern", "name", ui.Name)
 	pat, exists := e.patterns[ui.Name]
 	if !exists {
 		return fmt.Errorf("undefined subpattern %q", ui.Name)
@@ -76,7 +72,31 @@ func (e *Evaluator) execUse(ui *parser.UseInstr) error {
 
 	for _, instr := range pat.Body {
 		if err := e.exec(instr); err != nil {
-			return err
+			return fmt.Errorf("error executing subpattern %s: %w", ui.Name, err)
+		}
+	}
+	return nil
+}
+
+func (e *Evaluator) execIf(ii *parser.IfInstr) error {
+	cond, err := e.stack.Pop()
+	if err != nil {
+		return fmt.Errorf("if: stack underflow")
+	}
+	if cond != 0 && cond != 1 {
+		return fmt.Errorf("if: invalid condition value %d (expected 1 or 0)", cond)
+	}
+	if cond == 1 {
+		for _, instr := range ii.IfBody {
+			if err := e.exec(instr); err != nil {
+				return fmt.Errorf("error executing if body: %w", err)
+			}
+		}
+	} else {
+		for _, instr := range ii.ElseBody {
+			if err := e.exec(instr); err != nil {
+				return fmt.Errorf("error executing else body: %w", err)
+			}
 		}
 	}
 	return nil
@@ -236,6 +256,95 @@ func (e *Evaluator) execSimple(si *parser.SimpleInstr) error {
 		}
 		top--
 		e.stack.Push(top) // decrement top element
+	case ">":
+		if e.stack.Size() < 2 {
+			return fmt.Errorf("gt: stack underflow")
+		}
+		top, err := e.stack.Pop()
+		if err != nil {
+			return fmt.Errorf("gt: %w", err)
+		}
+		second, err := e.stack.Pop()
+		if err != nil {
+			return fmt.Errorf("gt: %w", err)
+		}
+		if second > top {
+			e.stack.Push(1) // push true
+		} else {
+			e.stack.Push(0) // push false
+		}
+	case "<":
+		if e.stack.Size() < 2 {
+			return fmt.Errorf("lt: stack underflow")
+		}
+		top, err := e.stack.Pop()
+		if err != nil {
+			return fmt.Errorf("lt: %w", err)
+		}
+		second, err := e.stack.Pop()
+		if err != nil {
+			return fmt.Errorf("lt: %w", err)
+		}
+		if second < top {
+			e.stack.Push(1) // push true
+		} else {
+			e.stack.Push(0) // push false
+		}
+	case "eq":
+		if e.stack.Size() < 2 {
+			return fmt.Errorf("eq: stack underflow")
+		}
+		top, err := e.stack.Pop()
+		if err != nil {
+			return fmt.Errorf("eq: %w", err)
+		}
+		second, err := e.stack.Pop()
+		if err != nil {
+			return fmt.Errorf("eq: %w", err)
+		}
+		if second == top {
+			e.stack.Push(1) // push true
+		} else {
+			e.stack.Push(0) // push false
+		}
+	case "neq":
+		if e.stack.Size() < 2 {
+			return fmt.Errorf("neq: stack underflow")
+		}
+		top, err := e.stack.Pop()
+		if err != nil {
+			return fmt.Errorf("neq: %w", err)
+		}
+		second, err := e.stack.Pop()
+		if err != nil {
+			return fmt.Errorf("neq: %w", err)
+		}
+		if second != top {
+			e.stack.Push(1) // push true
+		} else {
+			e.stack.Push(0) // push false
+		}
+	case "turn":
+		// Same function as 'rot' in FORTH ( n1 n2 n3 — n2 n3 n1 )
+		if e.stack.Size() < 3 {
+			return fmt.Errorf("turn: stack underflow")
+		}
+		top, err := e.stack.Pop()
+		if err != nil {
+			return fmt.Errorf("turn: %w", err)
+		}
+		second, err := e.stack.Pop()
+		if err != nil {
+			return fmt.Errorf("turn: %w", err)
+		}
+		third, err := e.stack.Pop()
+		if err != nil {
+			return fmt.Errorf("turn: %w", err)
+		}
+		e.stack.Push(second)
+		e.stack.Push(top)
+		e.stack.Push(third)
+
 	default:
 		return fmt.Errorf("unknown stitch %s", si.Token)
 	}

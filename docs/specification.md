@@ -1,173 +1,174 @@
-# Yarnball Specification
+# Yarnball Language Specification
 ## 1. Introduction
 
-**Yarnball** is an esoteric, stack-based programming language whose every instruction reads like a crochet pattern.  You can literally hand this “pattern” to a crochet artist and they’ll work through it. Though, what they produce won’t be much more than a random string of stitches.  Under the hood, each stitch manipulates a stack of integers.
+**Yarnball** is an esoteric, stack-based programming language whose every instruction reads like a crochet pattern.  You can literally hand this “pattern” to a crochet artist and they’ll work through it. Though, what they produce won’t be much more than a random string of stitches.  
+
+Under the hood, each instruction manipulates a single stack of integers. This is to be able to perform complex operations by combining a minimal set of very simple instructions.
+
+For program examples, see [here](https://github.com/svader0/yarnball/tree/master/examples).
 
 ---
 
+## Instruction Set
 
-## 2. Lexical & Structural Grammar
+### Simple Instructions
 
+- **ch (chain)**  
+  *Usage:* `ch <number>`  
+  *Behavior:* Converts the provided argument to an integer and pushes it onto the stack.
 
-* **Tokens**
-  * **Stitches**: `ch`, `sc`, `dc`, `hdc`, `tr`, `cl`, `inc`, `dec`, `add` (`bob`), `mul` (`dc`), `div` (`tr`), `sub` (`hdc`), `mod` (`cl`), `dup`, `swap`, `sl st`, `yo`, `pic`, `rep`, `FO`
+- **pic (picot stitch)**  
+  *Usage:* `pic`  
+  *Behavior:* Pops the top of the stack and prints the corresponding character (based on its ASCII value).  
+  *Error:* Fails if the stack is empty.
 
-  * **Literals**: non-negative integers (e.g. `0`, `42`)
-  * **Grouping**: `(`, `)`, commas (`,`), optional labels (`Row N:`, `Round N:`)
-  * **Comments**: start with `#`, go to end-of-line
+- **yo (yarn over)**  
+  *Usage:* `yo`  
+  *Behavior:* Pops the top value from the stack and prints it as a number.  
+  *Error:* Fails if the stack is empty.
 
-* **Program** = sequence of lines; each line can begin with an **ignored** crochet label (`Row 1:`, etc.), then one or more instructions or literals separated by whitespace or commas.
+- **fo (finish off)**  
+  *Usage:* `fo`  
+  *Behavior:* Halts the program immediately.
 
-* **`rep` syntax**
+- **sc (slip stitch)**  
+  *Usage:* `sc`  
+  *Behavior:* Pops (discards) the top value from the stack.  
+  *Error:* Fails if the stack is empty.
 
-  ```
-  rep [<count>] (<instr1>, <instr2>, …)   OR
-  *[<instruction(s)>]; rep from * <count> more times
-  ```
+- **dc (double crochet)**  
+  *Usage:* `dc`  
+  *Behavior:* Pops the top two values, multiplies them, and pushes the product onto the stack.  
+  *Error:* Fails if the stack has fewer than two values or if the second value is zero (to avoid issues noted in the implementation).
 
-  * If omitted, the interpreter **pops** a count from the stack.
+- **bob (bobble stitch)**  
+  *Usage:* `bob`  
+  *Behavior:* Pops the top two values, adds them, and pushes the sum onto the stack.  (n1, n2) -> (n1 + n2)
+  *Error:* Fails if the stack has fewer than two values.
 
-* **Termination**
+- **hdc (half double crochet)**  
+  *Usage:* `hdc`  
+  *Behavior:* Pops the top two values, subtracts the first popped value from the second, and pushes the result.  
+  *Error:* Fails if the stack has fewer than two values.
 
-  * The `FO` stitch immediately stops execution of the program.
-  * Falling off the end (no more instructions) also halts.
-  * Only `yo` and `pic` produce visible output; `FO` does not implicitly print.
+- **tr (treble crochet)**  
+  *Usage:* `tr`  
+  *Behavior:* Pops the top two values, divides the second by the first, and pushes the quotient.  
+  *Error:* Fails if the stack has fewer than two values or if division by zero occurs.
+
+- **cl (cluster stitch)**  
+  *Usage:* `cl`  
+  *Behavior:* Pops the top two values, computes the modulo (second % top), and pushes the result.  
+  *Error:* Fails if the stack has fewer than two values or if modulo by zero occurs.
+
+- **sl st (slip stitch)**  
+  *Usage:* `sl st`  
+  *Behavior:* Duplicates the top value of the stack.  
+  *Error:* Fails if the stack is empty.
+
+- **swap**  
+  *Usage:* `swap`  
+  *Behavior:* Pops the top two elements and pushes them back in reverse order, effectively swapping them.  
+  *Error:* Fails if the stack has fewer than two values.
+
+- **inc (increase)**   
+  *Usage:* `inc`  
+  *Behavior:* Pops the top value, increments it by one, and pushes the result.  
+  *Error:* Fails if the stack is empty.
+
+- **dec (decrease)**  
+  *Usage:* `dec`  
+  *Behavior:* Pops the top value, decrements it by one, and pushes the result.  
+  *Error:* Fails if the stack is empty.
 
 ---
 
+### Comparison Instructions
+
+These instructions assume that two values can be popped from the stack to perform a comparison.
+
+- **>**  
+  *Usage:* `>`  
+  *Behavior:* Pops two values; if the second is greater than the first, pushes `1` (true) otherwise `0` (false).  
+  *Error:* Fails if the stack has fewer than two values.
+
+- **<**  
+  *Usage:* `<`  
+  *Behavior:* Pops two values; if the second is less than the first, pushes `1` (true) otherwise `0` (false).  
+  *Error:* Fails if the stack has fewer than two values.
+
+- **eq**  
+  *Usage:* `eq`  
+  *Behavior:* Pops two values; if they are equal, pushes `1` (true) otherwise `0` (false).  
+  *Error:* Fails if the stack has fewer than two values.
+
+- **neq**  
+  *Usage:* `neq`  
+  *Behavior:* Pops two values; if they are not equal, pushes `1` (true) otherwise `0` (false).  
+  *Error:* Fails if the stack has fewer than two values.
+
+---
+
+### Stack Manipulation
+
+- **turn**  
+  *Usage:* `turn`  
+  *Behavior:* Rotates the top three elements of the stack.  
+  *Details:*  
+    1. Pops the top three values (let's call them _top_, _second_, and _third_ in the order they are popped).  
+    2. Pushes them back in the order: _second_, then _top_, then _third_.  
+    This effectively rotates the top three items of the stack, similar to FORTH'S `rot` instruction. 
+  *Error:* Fails if the stack contains fewer than three values.
+
+---
+
+### Block and Control Flow Instructions
+
+- **rep**  
+  *Usage:*  
+    - With a count expression: `*[ ... block instructions ... ]; rep from * [count] times`  
+    - Without a count expression: `*[ ... block instructions ... ]; rep from *` (in which case the count is popped from the stack)  
+  *Behavior:*  
+    Executes the provided block of instructions a specified number of times. If a count expression is provided, it is parsed into an integer; otherwise, the evaluator pops the count from the stack.  
+  *Error:* Fails if the provided count is invalid or if the stack underflows when a count is needed.
+
+- **if**  
+  *Usage:* `if [ ... if-body ... ] else [ ... else-body ... ] end`  
+  *Behavior:*  
+    Pops the top value from the stack, which should be either `0` (false) or `1` (true). If the value is `1`, the evaluator executes the if-body; if `0`, the else-body is executed.  
+  *Error:* Fails if the condition is not `0` or `1` or if the stack is empty.
+
+  Example:  
+  ```yarnball
+  if 
+    ch 65 pic 
+  else 
+    ch 66 pic 
+  end
+  ```
   
+### Stitches (Functions)
 
-## 3. Instruction Set
+- **use**
+  *Usage:* `use <subpattern name>`  
+  *Behavior:*  
+    Invokes a predefined subpattern. The evaluator retrieves the subpattern by name and executes its sequence of instructions.  
+  *Error:* Fails if the subpattern is not defined.
 
-### 3.1 Stack Manipulation
+- **Subpattern Definitions**  
+  *Usage:* `subpattern <subpattern name> = ([ ... instructions ... ]) end`  
+  *Behavior:*  
+    Defines a reusable subpattern that can be invoked later using the `use` instruction. By convention, subpattern names should be defined under the `STITCH GUIDE:` header. Names should be unique and contain no special characters. Names are also case-insensitive.
+  *Error:* Fails if the subpattern name is invalid or if the definition is malformed.
+    - Example:  
+  ```yarnball
+    subpattern printHello = (
+      ch 72 pic  # H
+      ch 101 pic # e
+      ch 108 pic # l
+      ch 108 pic # l
+      ch 111 pic # o
+    )
+  ```
 
-| Stitch         | Mnemonic | Effect                                                    |
-| -------------- | -------- | --------------------------------------------------------- |
-| Chain          | `ch n`   | Push literal `n` onto the stack.                          |
-| Slip Stitch      | `sl st`    | Duplicate the top value (peek & push a copy).             |
-| Swap           | `swap`   | Pop `a,b` then push in reverse order (`a` $\rightarrow$ top, `b` $\rightarrow$ next). |
-| Single Crochet | `sc`     | Pop & discard the top value.                              |
-
-### 3.2 Arithmetic Operations
-
-All pop the required operands, compute, then push the integer result.
-
-| Stitch          | Mnemonic | Operation                 | Example                       |
-| --------------- | -------- | ------------------------- | ----------------------------- |
-| Bobble          | `bob`    | Pop `a,b`; push `b + a`   | `ch 2 ch 3 bob` ⇒ stack `[5]` |
-| Half-Double Crochet | `hdc`    | Pop `a,b`; push `b − a`   | `ch 5 ch 2 hdc` ⇒ `[3]`       |
-| Double Crochet  | `dc`    | Pop `a,b`; push `b × a`   | `ch 3 ch 4 dc` ⇒ `[12]`      |
-| Treble Crochet  | `tr`    | Pop `a,b`; push `⌊b ÷ a⌋` | `ch 8 ch 3 tr` ⇒ `[2]`       |
-| Cluster (mod)   | `cl`    | Pop `a,b`; push `b mod a` | `ch 5 ch 12 cl` ⇒ `[2]`      |
-| Increase        | `inc`    | Pop `x`; push `x + 1`     | `ch 4 inc` ⇒ `[5]`            |
-| Decrease        | `dec`    | Pop `x`; push `x − 1`     | `ch 4 dec` ⇒ `[3]`            |
-
-### 3.3 I/O
-
-| Stitch    | Mnemonic | Effect                                      |
-| --------- | -------- | ------------------------------------------- |
-| Yarn Over | `yo`     | Pop `n`; print decimal `n` + newline.       |
-| Picot     | `pic`    | Pop `n`; print ASCII `chr(n)` (no newline). |
-
-### 3.4 Control Flow: `rep`
-```
-rep [<count>] (<instr1>, <instr2>, …)
-```
-
-* **Literal count**: `rep 5 (…)` runs 5×.
-* **Dynamic count**: `rep (…)` pops an integer from the stack and loops that many times.
-* Non-positive counts ⇒ zero iterations.
-
----
-
-## 4. Function-Patterns
-
-To avoid repetition, you can **define** and **invoke** named blocks:
-
-```bnf
-
-<pattern-def> ::= "pattern" <Name> [ "(" <param1>,… ")" ] "=" "(" <instr-list> ")"
-<invoke>      ::= "use"     <Name> [ "(" <arg1>,… ")" ]
-
-```
-Patterns can be called within other patterns, allowing for nested definitions.
-
-## STITCH GUIDE
-* “rep from * 2 more times” means execute instructions inside the asterisk-labeled section a total of 3 times.
-* You can also declare patterns under a “STITCH GUIDE” heading to mimic real crochet notation.
-
-**Example**:
-
-```
-pattern print_str(count) = (
-  rep(count) ( pic )
-)
-
-# push 5 chars 'H','i','!','\n','\0'
-ch 72 pic ch 105 pic ch 33 pic ch 10 pic ch 0 pic  
-ch 5           # loop count
-use print_str(5)
-FO
-
-```
-
----
-
-## 5. Semantics & Error Handling
-
-* **Stack underflow**: any pop on empty stack ⇒ runtime error, halt.
-* **Divide/mod by zero** ⇒ runtime error.
-* **Malformed `rep`** (missing parens or bad count) ⇒ parse error.
-* **Unknown stitch** ⇒ parse error, listing the bad token + line.
-
----
-## 6. Examples
-
-### 6.1 “Hello, World!”
-```
-Row 1:  ch 72 pic    # 'H'
-Row 2:  ch 101 pic   # 'e'
-Row 3:  ch 108 pic   # 'l'
-Row 4:  ch 108 pic   # 'l'
-Row 5:  ch 111 pic   # 'o'
-Row 6:  ch 44 pic    # ','
-Row 7:  ch 32 pic    # ' '
-Row 8:  ch 87 pic    # 'W'
-Row 9:  ch 111 pic   # 'o'
-Row 10: ch 114 pic   # 'r'
-Row 11: ch 108 pic   # 'l'
-Row 12: ch 100 pic   # 'd'
-Row 13: ch 33 pic    # '!'
-Row 14: yo          # print “!” + newline
-Row 15: FO          # end
-
-```
-
-  
-
-#### Condensed with loop
-
-```
-ch 72 ch 101 ch 108 ch 108 ch 111 ch 44 ch 32 ch 87 ch 111 ch 114 ch 108 ch 100 ch 33
-ch 13       # push count
-rep ( pic )
-FO
-```
-
-
-### 6.2 Factorial
-
-```
-
-ch 5       # n
-ch 1       # acc
-rep 5 (
-  dup      # keep n for next loop
-  sc       # pop copy of n
-  mul      # acc ← acc × n
-  dec      # n ← n − 1
-)
-yo         # print 120
-FO         # terminate
-```
 ---

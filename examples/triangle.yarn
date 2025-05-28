@@ -14,7 +14,7 @@ rep = "repeat"
 STITCH GUIDE:
 
 subpattern printrow = (
-    Row 1: sl st *ch 42 pic ch 32 pic; rep from * 
+    Row 1: sl st * ch 42 pic ch 32 pic ; rep from * 
     Row 2: sc 
 )
 
@@ -22,4 +22,4 @@ INSTRUCTIONS:
 
 Row 1: ch 25        # Base width
 Row 2: sl st
-Row 3: * sl st use printrow ch 10 pic sl st ch 1 hdc; rep from * FO
+Row 3: * sl st use printrow ch 10 pic sl st ch 1 hdc; rep from *

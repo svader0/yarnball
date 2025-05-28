@@ -66,3 +66,11 @@ type UseInstr struct {
 
 func (*UseInstr) instructionNode()        {}
 func (ui *UseInstr) TokenLiteral() string { return strings.ToLower(lexer.USE) }
+
+type IfInstr struct {
+	IfBody   []Instruction // instructions to execute if condition is true
+	ElseBody []Instruction // instructions to execute if condition is false (if any)
+}
+
+func (*IfInstr) instructionNode()     {}
+func (*IfInstr) TokenLiteral() string { return "if" }

@@ -3,9 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/svader0/yarnball/pkg/evaluator"
 	"github.com/svader0/yarnball/pkg/lexer"
 	"github.com/svader0/yarnball/pkg/parser"
@@ -14,11 +16,10 @@ import (
 
 // TODO:
 /*
- - Add a proper preprocessor to handle comments and whitespace
+ - Make the preprocessor more robust and make it respect line numbers
  - Add a program trace / debug mode
  - Implement a more robust error handling system
- - Support for multi-line instructions
- - Add more built-in patterns
+ - Change language spec to look more like actual crochet
 */
 
 func main() {
@@ -33,9 +34,11 @@ func main() {
 }
 
 func repl() {
+	handler := log.New(os.Stderr)
+	logger := slog.New(handler)
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("Yarnball REPL :) — type `\\q` to quit.")
-	ev := evaluator.New()
+	ev := evaluator.New(logger)
 
 	var inputBuilder strings.Builder
 	for {
@@ -50,7 +53,7 @@ func repl() {
 
 		// handle print stack command
 		if strings.TrimSpace(line) == ".s" {
-			fmt.Println("Stack:", ev.Stack())
+			fmt.Println("Stack:", ev.Stack(), " <-- top ")
 			continue
 		}
 
@@ -77,6 +80,10 @@ func repl() {
 }
 
 func runFile(path string) error {
+	handler := log.New(os.Stderr)
+	// handler.SetLevel(log.DebugLevel)
+	logger := slog.New(handler)
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -98,7 +105,7 @@ func runFile(path string) error {
 		return fmt.Errorf("Parse error: %v", err)
 	}
 
-	ev := evaluator.New()
+	ev := evaluator.New(logger)
 	if err := ev.Eval(prog); err != nil && err.Error() != "FO: halt" {
 		return fmt.Errorf("Runtime error: %v", err)
 	}

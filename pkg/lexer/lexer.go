@@ -30,23 +30,31 @@ const (
 	ASTERISK  = "*"
 
 	// Keywords / Stitch mnemonics
-	CH         = "CH"
-	SC         = "SC"
-	DC         = "DC"
-	HDC        = "HDC"
-	TR         = "TR"
-	CL         = "CL"
-	INC        = "INC"
-	DEC        = "DEC"
-	SWAP       = "SWAP"
-	SLST       = "SLST" // slip‐stitch; parser may want to combine "sl" "st"
-	YO         = "YO"
-	PIC        = "PIC"
-	REP        = "REP"
-	FO         = "FO"
-	SUBPATTERN = "SUBPATTERN"
-	USE        = "USE"
-	BOB        = "BOB"
+	CH          = "CH"
+	SC          = "SC"
+	DC          = "DC"
+	HDC         = "HDC"
+	TR          = "TR"
+	CL          = "CL"
+	INC         = "INC"
+	DEC         = "DEC"
+	SWAP        = "SWAP"
+	SLST        = "SLST" // slip‐stitch; parser may want to combine "sl" "st"
+	YO          = "YO"
+	PIC         = "PIC"
+	REP         = "REP"
+	FO          = "FO"
+	SUBPATTERN  = "SUBPATTERN"
+	USE         = "USE"
+	BOB         = "BOB"
+	IF          = "IF"
+	ELSE        = "ELSE"
+	END         = "END"
+	GREATERTHAN = ">"
+	LESSERTHAN  = "<"
+	EQUALS      = "EQ"
+	NOTEQUALS   = "NEQ"
+	TURN        = "TURN"
 )
 
 var keywords = map[string]TokenType{
@@ -67,6 +75,14 @@ var keywords = map[string]TokenType{
 	"fo":         FO,
 	"subpattern": SUBPATTERN,
 	"use":        USE,
+	"if":         IF,
+	"else":       ELSE,
+	"end":        END,
+	">":          GREATERTHAN,
+	"<":          LESSERTHAN,
+	"eq":         EQUALS,
+	"neq":        NOTEQUALS,
+	"turn":       TURN,
 }
 
 type Lexer struct {
@@ -169,6 +185,10 @@ func (l *Lexer) NextToken() Token {
 		tok = newToken(SEMICOLON, l.ch, tok.Line, tok.Column)
 	case '*':
 		tok = newToken(ASTERISK, l.ch, tok.Line, tok.Column)
+	case '>':
+		tok = newToken(GREATERTHAN, l.ch, tok.Line, tok.Column)
+	case '<':
+		tok = newToken(LESSERTHAN, l.ch, tok.Line, tok.Column)
 	case 0:
 		tok.Type = EOF
 		tok.Literal = ""

@@ -1,0 +1,28 @@
+FIBONACCI SWEATER:
+
+This pattern will create a beautiful sweater with a Fibonacci-inspired design.
+Make sure to use 4-gauge yarn and a suitable hook size for your project!
+
+STITCH GUIDE:
+
+subpattern fibstep = (
+    sl st  # duplicate top element
+    turn   # (a, b, b) -> (b, b, a)
+    turn   # (b, b, a) -> (b, a, b)
+    bob    # (b, a, b) -> (a, a+b)
+)
+
+INSTRUCTIONS:
+
+ch 0       # first two numbers in the Fibonacci sequence
+sl st yo
+ch 1
+sl st yo
+
+ch 100
+*
+    use fibstep
+    sl st
+    yo
+; rep from *
+
