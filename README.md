@@ -11,17 +11,18 @@ In Yarnball, operations are expressed using crochet terminology:
 - **pic (picot stitch):** Pops a value and prints it as a character.
 - **yo (yarn over):** Pops a value and prints it as a number.
 - **fo (finish off):** Immediately halts program execution.
-- **subpattern**: A reusable sequence of instructions that can be invoked with **use** (like a function call). 
+- **subpattern**: A reusable sequence of instructions that can be invoked with **use** (like a function call).
+- **AND MORE!**
 
 Other instructions manipulate the stack (e.g., **dc**, **bob**, **hdc**) or control the flow with loops (`rep`) and conditionals (`if`). You can even define reusable stitch patterns with subpattern definitions and invoke them using **use**.
 
 ## Getting Started
 
-To run a Yarnball program, use the command line. For example, to run the [hello_simple.yarn](examples/hello_simple.yarn) example, execute:
+To run a Yarnball program, use the command line. For example, to run the [hello_simple.yarn](examples/fib.yarn) example, execute:
 
 ```sh
 make
-./bin/yarnball examples/hello_simple.yarn
+./bin/yarnball examples/fib.yarn
 ```
 
 If you prefer an interactive environment, start the REPL by running:
