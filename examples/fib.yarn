@@ -19,7 +19,7 @@ sl st yo
 ch 1
 sl st yo
 
-ch 100
+ch 30
 *
     use fibstep
     sl st

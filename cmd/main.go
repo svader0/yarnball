@@ -20,6 +20,7 @@ import (
  - Add a program trace / debug mode
  - Implement a more robust error handling system
  - Change language spec to look more like actual crochet
+ - ADD SUPPORT FOR INPUT (e.g. reading from stdin)
 */
 
 func main() {

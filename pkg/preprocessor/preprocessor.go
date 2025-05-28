@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-// Preprocessor is responsible for cleaning up the input Yarnball code.
+// The preprocessor is responsible for cleaning up the input Yarnball code.
 // There are a lot of little things that make Yarnball code look more like crochet,
 // but are not, in fact, needed for the code to work at all (as of right now).
 
@@ -65,7 +65,7 @@ func (p *Preprocessor) removeComment(line string) string {
 }
 
 // RemoveRowRoundPrefix removes the "Row N:" or "Round N:" prefix from a line if it exists.
-// We don't need those, they just add a little crochet flair to the code.
+// We don't need those, they just add a little crochet-inspired flair to the code.
 func (p *Preprocessor) RemoveRowRoundPrefix(line string) string {
 	if strings.HasPrefix(line, "Row ") || strings.HasPrefix(line, "Round ") {
 		parts := strings.SplitN(line, ":", 2)

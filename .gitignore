@@ -1,2 +1,23 @@
+# Binaries
+*.exe
+*.o
+# Build directories
 bin/
-vendor/
+
+# Test binary and results
+*.test
+*.out
+
+# Dependency directories (if using modules)
+/vendor
+
+# Go workspace file (if using modules)
+go.work
+
+# IDE files
+.idea/
+*.iml
+*.vscode/
+
+# OS files
+.DS_Store

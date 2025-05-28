@@ -2,6 +2,10 @@ package stack
 
 import "fmt"
 
+/*
+	A simple stack implementation for use in the Yarnball interpreter.
+*/
+
 type Stack struct {
 	items []int
 }

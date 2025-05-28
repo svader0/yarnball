@@ -13,16 +13,18 @@ type Parser struct {
 
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l}
-	p.nextToken()
-	p.nextToken()
+	p.nextToken() // Initialize current token
+	p.nextToken() // Initialize peek token
 	return p
 }
 
+// nextToken advances the parser to the next token, updating current and peek tokens.
 func (p *Parser) nextToken() {
 	p.cur = p.peek
 	p.peek = p.l.NextToken()
 }
 
+// Parses the entire program, which consists of a sequence of instructions.
 func (p *Parser) ParseProgram() (*Program, error) {
 	prog := &Program{}
 	for p.cur.Type != lexer.EOF {
@@ -36,6 +38,7 @@ func (p *Parser) ParseProgram() (*Program, error) {
 	return prog, nil
 }
 
+// Parses an instruction based on the current token type.
 func (p *Parser) parseInstruction() (Instruction, error) {
 	switch p.cur.Type {
 	case lexer.SUBPATTERN:
@@ -64,6 +67,8 @@ func (p *Parser) parseInstruction() (Instruction, error) {
 	}
 }
 
+// parseCh parses the 'ch' instruction, which expects an INT argument, which is
+// why it is separated from generic SimpleInstr parsing stuff
 func (p *Parser) parseCh() (Instruction, error) {
 	instr := &SimpleInstr{Token: p.cur.Literal}
 	p.nextToken() // consume 'ch'
@@ -91,11 +96,10 @@ func (p *Parser) parseSubpattern() (Instruction, error) {
 	p.nextToken() // consume name
 	p.nextToken() // consume '='
 
-	// Now p.cur should be the '(' token.
 	if p.cur.Type != lexer.LPAREN {
 		return nil, fmt.Errorf("expected '(', got %s", p.cur.Literal)
 	}
-	p.nextToken() // consume '(' and move to the first token in the subpattern body
+	p.nextToken() // consume '('
 
 	// Parse instructions until closing ')'
 	for p.cur.Type != lexer.RPAREN && p.cur.Type != lexer.EOF {
@@ -116,26 +120,12 @@ func (p *Parser) parseUse() (Instruction, error) {
 	}
 	use := &UseInstr{Name: p.cur.Literal}
 	p.nextToken() // advance past the IDENT token
-
-	// If there is a parameter list, consume it.
-	if p.cur.Type == lexer.LPAREN {
-		p.nextToken() // consume '('
-		for p.cur.Type != lexer.RPAREN && p.cur.Type != lexer.EOF {
-			if p.cur.Type != lexer.INT && p.cur.Type != lexer.IDENT {
-				return nil, fmt.Errorf("expected INT or IDENT arg, got %s", p.cur.Literal)
-			}
-			use.Args = append(use.Args, p.cur.Literal)
-			p.nextToken()
-		}
-		if p.cur.Type != lexer.RPAREN {
-			return nil, fmt.Errorf("expected RPAREN, got %s", p.cur.Literal)
-		}
-		p.nextToken() // consume ')'
-	}
 	return use, nil
 }
 
-// parseRep implements "*[<instrs>]; rep from * <count> [times]"
+// parseRep parses a rep block, which starts with '*' and contains a sequence of instructions
+// until it hits a semicolon, followed by 'rep from *' and an optional INT count.
+// It returns a RepInstr containing the body of instructions and the count expression.
 func (p *Parser) parseRep() (Instruction, error) {
 	ri := &RepInstr{}
 
@@ -149,7 +139,6 @@ func (p *Parser) parseRep() (Instruction, error) {
 			return nil, err
 		}
 		ri.Body = append(ri.Body, instr)
-		// Removed extra p.nextToken() here.
 	}
 
 	if p.cur.Type != lexer.SEMICOLON {
@@ -158,31 +147,30 @@ func (p *Parser) parseRep() (Instruction, error) {
 	// Consume the semicolon.
 	p.nextToken()
 
-	// Next, expect the 'rep' keyword.
+	// 'rep' keyword.
 	if p.cur.Type != lexer.REP {
 		return nil, fmt.Errorf("expected 'rep' after ';', got %q at line %d", p.cur.Literal, p.cur.Line)
 	}
 	p.nextToken() // Consume 'rep'
 
-	// Expect the literal "from"
+	// Expect literal "from"
 	if p.cur.Literal != "from" {
 		return nil, fmt.Errorf("expected 'from' after 'rep', got %q at line %d", p.cur.Literal, p.cur.Line)
 	}
 	p.nextToken() // Consume "from"
 
-	// Expect an asterisk '*' for the count.
 	if p.cur.Type != lexer.ASTERISK {
 		return nil, fmt.Errorf("expected '*' after 'from', got %q at line %d", p.cur.Literal, p.cur.Line)
 	}
 	p.nextToken() // Consume '*'
 
-	// Optionally, consume INT count.
+	// consume INT count. (if present)
 	if p.cur.Type == lexer.INT {
 		ri.CountExpr = p.cur.Literal
 		p.nextToken()
 	}
 
-	// Optionally, consume a 'times' keyword.
+	// optional 'times' keyword
 	if p.cur.Type == lexer.IDENT && p.cur.Literal == "times" {
 		p.nextToken()
 	}
@@ -202,7 +190,6 @@ func (p *Parser) parseIf() (Instruction, error) {
 			return nil, err
 		}
 		ifBody = append(ifBody, instr)
-		// Do not call p.nextToken() here; let each parse* function consume its tokens.
 	}
 
 	var elseBody []Instruction

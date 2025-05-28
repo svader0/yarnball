@@ -34,12 +34,10 @@ func (e *Evaluator) Eval(prog *parser.Program) error {
 	for _, instr := range prog.Instructions {
 		e.log.Debug("Evaluating instruction", "instruction", instr.TokenLiteral())
 		// Execute the instruction based on its type
-		fmt.Println("Executing instruction:", instr.TokenLiteral())
 		if err := e.exec(instr); err != nil {
 			e.log.Error("Error executing instruction", "instruction", instr.TokenLiteral(), "error", err)
 			return fmt.Errorf("error executing instruction %s: %w", instr.TokenLiteral(), err)
 		}
-		fmt.Println("Stack after instruction:", e.stack)
 		e.log.Debug("Instruction executed successfully", "instruction", instr.TokenLiteral())
 	}
 	return nil
