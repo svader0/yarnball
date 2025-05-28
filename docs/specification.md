@@ -12,13 +12,15 @@ For program examples, see [here](https://github.com/svader0/yarnball/tree/master
 ## Program Styling
 Yarnball programs are designed to be human-readable and resemble crochet patterns. The language supports comments, whitespace, and other aesthetic features to enhance readability.
 
-Comments are denoted by `#` and can be placed anywhere in the code. They are ignored by the interpreter.
+Comments are denoted by `#` and can be placed anywhere in the code.
 
 Whitespace (spaces, tabs, and newlines) is ignored except where it separates tokens. This allows for flexible formatting and indentation to improve clarity. 
 
 Commas are ignored too, so you can use them to separate values in a list-like manner without affecting the program's execution.
 
 Like a crochet pattern, Yarnball programs have optional header sections and row numbers that are currently ignored by the parser. The actual program will start with whatever instruction comes either after `STITCH GUIDE:` or `INSTRUCTIONS:`, whichever comes first. By convention, subpatterns/stitches are defined under the `STITCH GUIDE:` header, and the main instructions of the program are defined under the `INSTRUCTIONS:` header. 
+
+Similarly, instances of `Row #:` and `Round #:` are removed by the preprocessor and currently exist only to serve the aesthetic function of making the program look more crochet-like. 
 
 For example:
 ```yarnball
