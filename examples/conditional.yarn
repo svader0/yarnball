@@ -1,3 +1,8 @@
+FOOBAR EVENING PURSE W/ WATER BOTTLE HOLDER!
+Author: Mr. yarnball
+
+This example shows how to use conditionals in yarnball.
+
 STITCH GUIDE:
 
 subpattern foo = (
@@ -14,14 +19,13 @@ subpattern bar = (
 
 INSTRUCTIONS:
 
-ch 15          # Push 15 onto the stack
-ch 10          # Push 10 onto the stack  
->           # pop 2, Compare if 15 > 10, if so push 1 otherwise push 0
-if
+Row 1: ch 15
+Row 2: ch 10, >           # pop 2, Compare if 15 > 10, if so push 1 otherwise push 0
+Row 3: if
     use foo 
 else 
     use bar  
-end            # End conditional block
+end
 
-ch 33 pic 
-ch 10 pic
+Row 4: ch 33, pic, ch 10, pic
+Row 5: fo

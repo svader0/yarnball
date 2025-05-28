@@ -14,15 +14,9 @@ subpattern fibstep = (
 
 INSTRUCTIONS:
 
-ch 0       # first two numbers in the Fibonacci sequence
-sl st yo
-ch 1
-sl st yo
-
-ch 30
-*
-    use fibstep
-    sl st
-    yo
-; rep from *
+Row 1: ch 0
+Row 2: sl st, yo
+Row 3: ch 1
+Row 4: sl st, yo
+Row 5: ch 30 *use fibstep, sl st, yo; rep from *
 

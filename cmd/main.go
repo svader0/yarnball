@@ -42,6 +42,8 @@ func repl() {
 	ev := evaluator.New(logger)
 
 	var inputBuilder strings.Builder
+	pre := preprocessor.New() // Create preprocessor once
+
 	for {
 		fmt.Print("=> ")
 		if !scanner.Scan() {
@@ -61,8 +63,15 @@ func repl() {
 		// Accumulate multi-line input
 		inputBuilder.WriteString(line + "\n")
 		if isCompleteInput(inputBuilder.String()) {
-			// lex → parse → eval
-			l := lexer.New(inputBuilder.String())
+			processed, err := pre.Process(inputBuilder.String())
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Preprocessing error: %v\n", err)
+				inputBuilder.Reset()
+				continue
+			}
+
+			// lex -> parse -> eval
+			l := lexer.New(processed)
 			p := parser.New(l)
 			prog, err := p.ParseProgram()
 			if err != nil {

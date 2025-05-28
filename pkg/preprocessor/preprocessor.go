@@ -33,6 +33,17 @@ func (p *Preprocessor) Process(input string) (string, error) {
 	}
 
 	for _, line := range lines[startIdx:] {
+
+		// Commas are just to make things look nice, currently serve no other purpose---ignore them.
+		line = strings.ReplaceAll(line, ",", "")
+		line := strings.TrimSpace(line)
+
+		// If the line is empty, a comment, or exactly "INSTRUCTIONS:" leave an empty line to preserve line numbers.
+		if line == "" || strings.HasPrefix(line, "#") || strings.EqualFold(line, "INSTRUCTIONS:") {
+			processedLines = append(processedLines, "")
+			continue
+		}
+
 		if strings.TrimSpace(line) == "" || strings.HasPrefix(strings.TrimSpace(line), "#") {
 			continue // Skip empty lines and comment lines
 		}
@@ -41,14 +52,14 @@ func (p *Preprocessor) Process(input string) (string, error) {
 			continue
 		}
 
-		// Remove leading and trailing whitespace
-		line = strings.TrimSpace(line)
-
 		// Remove any comments from the line
 		line = p.removeComment(line)
 
 		// Remove "Row #:" or "Round #:" prefixes if present
 		line = p.RemoveRowRoundPrefix(line)
+
+		// convert to lowercase
+		line = strings.ToLower(line)
 
 		processedLines = append(processedLines, line)
 	}

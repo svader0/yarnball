@@ -9,6 +9,38 @@ For program examples, see [here](https://github.com/svader0/yarnball/tree/master
 
 ---
 
+## Program Styling
+Yarnball programs are designed to be human-readable and resemble crochet patterns. The language supports comments, whitespace, and other aesthetic features to enhance readability.
+
+Comments are denoted by `#` and can be placed anywhere in the code. They are ignored by the interpreter.
+
+Whitespace (spaces, tabs, and newlines) is ignored except where it separates tokens. This allows for flexible formatting and indentation to improve clarity. 
+
+Commas are ignored too, so you can use them to separate values in a list-like manner without affecting the program's execution.
+
+Like a crochet pattern, Yarnball programs have optional header sections and row numbers that are currently ignored by the parser. The actual program will start with whatever instruction comes either after `STITCH GUIDE:` or `INSTRUCTIONS:`, whichever comes first. By convention, subpatterns/stitches are defined under the `STITCH GUIDE:` header, and the main instructions of the program are defined under the `INSTRUCTIONS:` header. 
+
+For example:
+```yarnball
+BEAUTIFUL SWEATER!
+Author: Mr. yarnball
+
+Yadda yadda yadda, information about this program. I mean, uhh.. not program! Sweater!
+Sizing varies based on the yarn used, so please adjust accordingly.
+
+Yarn gauge 4, use a 5mm hook. 
+
+STITCH GUIDE:
+
+subpattern whatever = (
+    # do some stuff
+)
+
+INSTRUCTIONS:
+Row 1: [some code]
+Round 2: [some more code...]
+```
+
 ## Instruction Set
 
 ### Simple Instructions
@@ -170,5 +202,13 @@ These instructions assume that two values can be popped from the stack to perfor
       ch 111 pic # o
     )
   ```
+
+### Special Instructions
+
+#### REPL
+- **.s**
+  *Usage:* `.s`  
+  *Behavior:* **Usable only in the REPL.** Prints the current state of the stack, showing all values in order from bottom to top. This is useful for debugging and understanding the current stack state.
+
 
 ---

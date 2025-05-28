@@ -3,6 +3,7 @@ package evaluator
 import (
 	"fmt"
 	"log/slog"
+	"os"
 	"strconv"
 
 	"github.com/svader0/yarnball/pkg/parser"
@@ -121,8 +122,7 @@ func (e *Evaluator) execSimple(si *parser.SimpleInstr) error {
 		}
 		fmt.Println(n)
 	case "fo":
-		// terminate program
-		return fmt.Errorf("FO: halt")
+		os.Exit(0)
 	case "sc":
 		// pop top value
 		if e.stack.IsEmpty() {
