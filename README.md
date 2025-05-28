@@ -18,7 +18,7 @@ Other instructions manipulate the stack (e.g., **dc**, **bob**, **hdc**) or cont
 
 ## Getting Started
 
-To run a Yarnball program, use the command line. For example, to run the [hello_simple.yarn](examples/fib.yarn) example, execute:
+To run a Yarnball program, use the command line. For example, to run the [fib.yarn](examples/fib.yarn) example, execute:
 
 ```sh
 make
