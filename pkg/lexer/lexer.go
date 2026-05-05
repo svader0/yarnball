@@ -20,14 +20,17 @@ const (
 	EOF     = "EOF"
 
 	// Literals
-	IDENT = "IDENT" // names, subpattern names, or unknown mnemonics
-	INT   = "INT"
+	IDENT  = "IDENT" // names, stitch names, or unknown mnemonics
+	INT    = "INT"
+	FILLER = "FILLER"
 
 	// Delimiters
-	LPAREN    = "("
-	RPAREN    = ")"
-	SEMICOLON = ";"
-	ASTERISK  = "*"
+	LPAREN   = "("
+	RPAREN   = ")"
+	LBRACKET = "["
+	RBRACKET = "]"
+	ASTERISK = "*"
+	ASSIGN   = "="
 
 	// Keywords / Stitch mnemonics
 	CH          = "CH"
@@ -42,47 +45,79 @@ const (
 	SLST        = "SLST" // slip‐stitch; parser may want to combine "sl" "st"
 	YO          = "YO"
 	PIC         = "PIC"
-	REP         = "REP"
 	FO          = "FO"
-	SUBPATTERN  = "SUBPATTERN"
-	USE         = "USE"
 	BOB         = "BOB"
+	OVER        = "OVER"
+	PICK        = "PICK"
+	ROLL        = "ROLL"
+	GREATERTHAN = ">"
+	LESSERTHAN  = "<"
+	EQ          = "EQ"
+	NEQ         = "NEQ"
+	TURN        = "TURN"
 	IF          = "IF"
 	ELSE        = "ELSE"
 	END         = "END"
-	GREATERTHAN = ">"
-	LESSERTHAN  = "<"
-	EQUALS      = "EQ"
-	NOTEQUALS   = "NEQ"
-	TURN        = "TURN"
+	REPEAT      = "REPEAT"
+	UNTIL       = "UNTIL"
+	WHILE       = "WHILE"
+	STITCHDEF   = "STITCHDEF"
+	USE         = "USE"
 )
 
 var keywords = map[string]TokenType{
-	"ch":         CH,
-	"sc":         SC,
-	"dc":         DC,
-	"hdc":        HDC,
-	"tr":         TR,
-	"cl":         CL,
-	"inc":        INC,
-	"dec":        DEC,
-	"bob":        BOB,
-	"swap":       SWAP,
-	"sl st":      SLST,
-	"yo":         YO,
-	"pic":        PIC,
-	"rep":        REP,
-	"fo":         FO,
-	"subpattern": SUBPATTERN,
-	"use":        USE,
-	"if":         IF,
-	"else":       ELSE,
-	"end":        END,
-	">":          GREATERTHAN,
-	"<":          LESSERTHAN,
-	"eq":         EQUALS,
-	"neq":        NOTEQUALS,
-	"turn":       TURN,
+	"ch":     CH,
+	"sc":     SC,
+	"dc":     DC,
+	"hdc":    HDC,
+	"tr":     TR,
+	"cl":     CL,
+	"inc":    INC,
+	"dec":    DEC,
+	"bob":    BOB,
+	"swap":   SWAP,
+	"sl st":  SLST,
+	"yo":     YO,
+	"pic":    PIC,
+	"fo":     FO,
+	"over":   OVER,
+	"pick":   PICK,
+	"roll":   ROLL,
+	"if":     IF,
+	"else":   ELSE,
+	"end":    END,
+	"repeat": REPEAT,
+	"until":  UNTIL,
+	"while":  WHILE,
+	">":      GREATERTHAN,
+	"<":      LESSERTHAN,
+	"eq":     EQ,
+	"neq":    NEQ,
+	"turn":   TURN,
+	"stitch": STITCHDEF,
+	"use":    USE,
+}
+
+var fillerWords = map[string]struct{}{
+	"from":   {},
+	"the":    {},
+	"to":     {},
+	"around": {},
+	"in":     {},
+	"next":   {},
+	"st":     {},
+	"sts":    {},
+	"then":   {},
+	"and":    {},
+	"with":   {},
+	"of":     {},
+	"at":     {},
+	"for":    {},
+	"times":  {},
+	"join":   {},
+	"work":   {},
+	"row":    {},
+	"round":  {},
 }
 
 type Lexer struct {
@@ -97,9 +132,8 @@ type Lexer struct {
 // New initializes a lexer for the given input.
 func New(input string) *Lexer {
 	// remove UTF-8 BOM if present
-	if strings.HasPrefix(input, "\uFEFF") {
-		input = strings.TrimPrefix(input, "\uFEFF")
-	}
+	strings.TrimPrefix(input, "\uFEFF")
+
 	// normalize non-breaking spaces -> regular spaces
 	input = strings.ReplaceAll(input, "\u00A0", " ")
 
@@ -116,14 +150,17 @@ func New(input string) *Lexer {
 	return l
 }
 
+// readChar gives us the next character and advances our position in the input.
 func (l *Lexer) readChar() {
 	if l.readPosition >= len(l.input) {
 		l.ch = 0
 	} else {
 		l.ch = l.input[l.readPosition]
 	}
+
 	l.position = l.readPosition
 	l.readPosition++
+
 	if l.ch == '\n' {
 		l.Line++
 		l.Column = 0
@@ -132,15 +169,7 @@ func (l *Lexer) readChar() {
 	}
 }
 
-// peekChar lets us look ahead without consuming.
-func (l *Lexer) peekChar() byte {
-	if l.readPosition >= len(l.input) {
-		return 0
-	}
-	return l.input[l.readPosition]
-}
-
-// returns the next token from the input.
+// NextToken returns the next token from the input.
 func (l *Lexer) NextToken() Token {
 	var tok Token
 
@@ -153,13 +182,11 @@ func (l *Lexer) NextToken() Token {
 			for l.ch != '\n' && l.ch != 0 {
 				l.readChar()
 			}
+		} else if l.ch == ',' || l.ch == ':' || l.ch == '.' || l.ch == ';' {
+			l.readChar()
 		} else {
 			break
 		}
-	}
-	// ignore commas
-	if l.ch == ',' {
-		l.readChar()
 	}
 
 	tok.Line = l.Line
@@ -181,10 +208,14 @@ func (l *Lexer) NextToken() Token {
 		tok = newToken(LPAREN, l.ch, tok.Line, tok.Column)
 	case ')':
 		tok = newToken(RPAREN, l.ch, tok.Line, tok.Column)
-	case ';':
-		tok = newToken(SEMICOLON, l.ch, tok.Line, tok.Column)
+	case '[':
+		tok = newToken(LBRACKET, l.ch, tok.Line, tok.Column)
+	case ']':
+		tok = newToken(RBRACKET, l.ch, tok.Line, tok.Column)
 	case '*':
 		tok = newToken(ASTERISK, l.ch, tok.Line, tok.Column)
+	case '=':
+		tok = newToken(ASSIGN, l.ch, tok.Line, tok.Column)
 	case '>':
 		tok = newToken(GREATERTHAN, l.ch, tok.Line, tok.Column)
 	case '<':
@@ -241,8 +272,12 @@ func isDigit(ch byte) bool {
 }
 
 func lookupIdent(ident string) TokenType {
-	if tok, ok := keywords[strings.ToLower(ident)]; ok {
+	lower := strings.ToLower(ident)
+	if tok, ok := keywords[lower]; ok {
 		return tok
+	}
+	if _, ok := fillerWords[lower]; ok {
+		return FILLER
 	}
 	return IDENT
 }

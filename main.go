@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -40,6 +41,7 @@ func repl() {
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("Yarnball REPL :) — type `\\q` to quit.")
 	ev := evaluator.New(logger)
+	applyStepLimit(ev)
 
 	var inputBuilder strings.Builder
 	pre := preprocessor.New() // Create preprocessor once
@@ -116,15 +118,27 @@ func runFile(path string) error {
 	}
 
 	ev := evaluator.New(logger)
+	applyStepLimit(ev)
 	if err := ev.Eval(prog); err != nil && err.Error() != "FO: halt" {
 		return fmt.Errorf("Runtime error: %v", err)
 	}
 	return nil
 }
 
+func applyStepLimit(ev *evaluator.Evaluator) {
+	if raw := os.Getenv("YARNBALL_STEP_LIMIT"); raw != "" {
+		if limit, err := strconv.Atoi(raw); err == nil {
+			ev.SetStepLimit(limit)
+		}
+	}
+}
+
 // Helper function to check if the input is complete
 func isCompleteInput(input string) bool {
 	openParens := strings.Count(input, "(")
 	closeParens := strings.Count(input, ")")
-	return openParens == closeParens
+	openBrackets := strings.Count(input, "[")
+	closeBrackets := strings.Count(input, "]")
+	asterisks := strings.Count(input, "*")
+	return openParens == closeParens && openBrackets == closeBrackets && asterisks%2 == 0
 }

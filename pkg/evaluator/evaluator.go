@@ -11,16 +11,25 @@ import (
 )
 
 type Evaluator struct {
-	log      *slog.Logger
-	stack    *stack.Stack
-	patterns map[string]*parser.SubpatternDef
+	log       *slog.Logger
+	stack     *stack.Stack
+	patterns  map[string]*parser.StitchDef
+	stepLimit int
+	steps     int
 }
 
 func New(logger *slog.Logger) *Evaluator {
 	return &Evaluator{
-		log:      logger,
-		stack:    stack.New(),
-		patterns: make(map[string]*parser.SubpatternDef),
+		log:       logger,
+		stack:     stack.New(),
+		patterns:  make(map[string]*parser.StitchDef),
+		stepLimit: 1_000_000,
+	}
+}
+
+func (e *Evaluator) SetStepLimit(limit int) {
+	if limit > 0 {
+		e.stepLimit = limit
 	}
 }
 
@@ -32,6 +41,7 @@ func (e *Evaluator) Stack() *stack.Stack {
 
 func (e *Evaluator) Eval(prog *parser.Program) error {
 	e.log.Debug("Starting evaluation of program", "instructions", len(prog.Instructions))
+	e.steps = 0
 	for _, instr := range prog.Instructions {
 		e.log.Debug("Evaluating instruction", "instruction", instr.TokenLiteral())
 		// Execute the instruction based on its type
@@ -45,14 +55,17 @@ func (e *Evaluator) Eval(prog *parser.Program) error {
 }
 
 func (e *Evaluator) exec(instr parser.Instruction) error {
+	if err := e.checkStep(); err != nil {
+		return err
+	}
 	switch node := instr.(type) {
 	case *parser.SimpleInstr:
 		return e.execSimple(node)
-	case *parser.RepInstr:
-		return e.execRep(node)
-	case *parser.UseInstr:
-		return e.execUse(node)
-	case *parser.SubpatternDef:
+	case *parser.RepeatInstr:
+		return e.execRepeat(node)
+	case *parser.CallInstr:
+		return e.execCall(node)
+	case *parser.StitchDef:
 		e.patterns[node.Name] = node
 		return nil
 	case *parser.IfInstr:
@@ -62,16 +75,16 @@ func (e *Evaluator) exec(instr parser.Instruction) error {
 	}
 }
 
-func (e *Evaluator) execUse(ui *parser.UseInstr) error {
-	e.log.Debug("Using subpattern", "name", ui.Name)
-	pat, exists := e.patterns[ui.Name]
+func (e *Evaluator) execCall(ci *parser.CallInstr) error {
+	e.log.Debug("Using stitch", "name", ci.Name)
+	pat, exists := e.patterns[ci.Name]
 	if !exists {
-		return fmt.Errorf("undefined subpattern %q", ui.Name)
+		return fmt.Errorf("undefined stitch %q", ci.Name)
 	}
 
 	for _, instr := range pat.Body {
 		if err := e.exec(instr); err != nil {
-			return fmt.Errorf("error executing subpattern %s: %w", ui.Name, err)
+			return fmt.Errorf("error executing stitch %s: %w", ci.Name, err)
 		}
 	}
 	return nil
@@ -82,10 +95,7 @@ func (e *Evaluator) execIf(ii *parser.IfInstr) error {
 	if err != nil {
 		return fmt.Errorf("if: stack underflow")
 	}
-	if cond != 0 && cond != 1 {
-		return fmt.Errorf("if: invalid condition value %d (expected 1 or 0)", cond)
-	}
-	if cond == 1 {
+	if cond != 0 {
 		for _, instr := range ii.IfBody {
 			if err := e.exec(instr); err != nil {
 				return fmt.Errorf("error executing if body: %w", err)
@@ -128,7 +138,7 @@ func (e *Evaluator) execSimple(si *parser.SimpleInstr) error {
 		if e.stack.IsEmpty() {
 			return fmt.Errorf("sc: stack underflow")
 		}
-		e.stack.Pop()
+		_, _ = e.stack.Pop()
 	case "dc":
 		// product of top two values
 		if e.stack.Size() < 2 {
@@ -142,15 +152,12 @@ func (e *Evaluator) execSimple(si *parser.SimpleInstr) error {
 		if err != nil {
 			return fmt.Errorf("dc: %w", err)
 		}
-		if second == 0 {
-			return fmt.Errorf("dc: division by zero")
-		}
 		new := top * second
 		e.stack.Push(new) // push product
 	case "bob":
 		// add top two values
 		if e.stack.Size() < 2 {
-			return fmt.Errorf("dc: stack underflow")
+			return fmt.Errorf("bob: stack underflow")
 		}
 		top, err := e.stack.Pop()
 		if err != nil {
@@ -342,38 +349,104 @@ func (e *Evaluator) execSimple(si *parser.SimpleInstr) error {
 		e.stack.Push(second)
 		e.stack.Push(top)
 		e.stack.Push(third)
-
+	case "over":
+		if e.stack.Size() < 2 {
+			return fmt.Errorf("over: stack underflow")
+		}
+		val, err := e.stack.PeekAt(1)
+		if err != nil {
+			return fmt.Errorf("over: %w", err)
+		}
+		e.stack.Push(val)
+	case "pick":
+		if len(si.Args) != 1 {
+			return fmt.Errorf("pick: missing depth argument")
+		}
+		depth, err := strconv.Atoi(si.Args[0])
+		if err != nil || depth < 0 {
+			return fmt.Errorf("pick: invalid depth %q", si.Args[0])
+		}
+		val, err := e.stack.PeekAt(depth)
+		if err != nil {
+			return fmt.Errorf("pick: %w", err)
+		}
+		e.stack.Push(val)
+	case "roll":
+		if len(si.Args) != 1 {
+			return fmt.Errorf("roll: missing depth argument")
+		}
+		depth, err := strconv.Atoi(si.Args[0])
+		if err != nil || depth < 0 {
+			return fmt.Errorf("roll: invalid depth %q", si.Args[0])
+		}
+		if err := e.stack.Roll(depth); err != nil {
+			return fmt.Errorf("roll: %w", err)
+		}
 	default:
 		return fmt.Errorf("unknown stitch %s", si.Token)
 	}
 	return nil
 }
 
-func (e *Evaluator) execRep(ri *parser.RepInstr) error {
-	var count int
-	var err error
-
-	if ri.CountExpr != "" {
-		count, err = strconv.Atoi(ri.CountExpr)
-		if err != nil {
-			return fmt.Errorf("rep: invalid count %q: %w", ri.CountExpr, err)
-		}
-	} else {
-		if e.stack.IsEmpty() {
-			return fmt.Errorf("rep: stack underflow")
-		}
-		count, err = e.stack.Pop()
-		if err != nil {
-			return fmt.Errorf("rep: %w", err)
-		}
-	}
-
-	for i := 0; i < count; i++ {
-		for _, instr := range ri.Body {
-			if err := e.exec(instr); err != nil {
+func (e *Evaluator) execRepeat(ri *parser.RepeatInstr) error {
+	switch ri.Mode {
+	case parser.RepeatCount:
+		for i := 0; i < ri.Count; i++ {
+			if err := e.checkStep(); err != nil {
 				return err
 			}
+			for _, instr := range ri.Body {
+				if err := e.exec(instr); err != nil {
+					return err
+				}
+			}
 		}
+	case parser.RepeatUntil:
+		for {
+			cond, ok := e.stack.Peek()
+			if !ok {
+				return fmt.Errorf("repeat until: stack underflow")
+			}
+			if cond != 0 {
+				break
+			}
+			if err := e.checkStep(); err != nil {
+				return err
+			}
+			for _, instr := range ri.Body {
+				if err := e.exec(instr); err != nil {
+					return err
+				}
+			}
+		}
+	case parser.RepeatWhile:
+		for {
+			cond, ok := e.stack.Peek()
+			if !ok {
+				return fmt.Errorf("repeat while: stack underflow")
+			}
+			if cond == 0 {
+				break
+			}
+			if err := e.checkStep(); err != nil {
+				return err
+			}
+			for _, instr := range ri.Body {
+				if err := e.exec(instr); err != nil {
+					return err
+				}
+			}
+		}
+	default:
+		return fmt.Errorf("repeat: unknown mode")
+	}
+	return nil
+}
+
+func (e *Evaluator) checkStep() error {
+	e.steps++
+	if e.stepLimit > 0 && e.steps > e.stepLimit {
+		return fmt.Errorf("step limit exceeded")
 	}
 	return nil
 }

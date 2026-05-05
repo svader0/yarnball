@@ -5,7 +5,7 @@ Make sure to use 4-gauge yarn and a suitable hook size for your project!
 
 STITCH GUIDE:
 
-subpattern fibstep = (
+stitch fibstep = (
     sl st  # duplicate top element
     turn   # (a, b, b) -> (b, b, a)
     turn   # (b, b, a) -> (b, a, b)
@@ -18,5 +18,4 @@ Row 1: ch 0
 Row 2: sl st, yo
 Row 3: ch 1
 Row 4: sl st, yo
-Row 5: ch 30 *use fibstep, sl st, yo; rep from *
-
+Row 5: * fibstep, sl st, yo * repeat 30

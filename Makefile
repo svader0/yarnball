@@ -1,10 +1,10 @@
 .PHONY: build run clean test
 
 build:
-	go build -o bin/yarnball ./cmd/main.go
+	go build -o yarnball
 
 repl: build
-	./bin/yarnball
+	./yarnball
 
 clean:
 	rm -rf bin

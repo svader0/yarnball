@@ -1,8 +1,8 @@
 # Yarnball
 
-Yarnball is an esoteric, stack-based programming language where every instruction reads like a crochet pattern.
+Yarnball is an esoteric, stack-based programming language where every instruction reads sort of like a crochet pattern.
 
-As of now, the language is in its early stages, with a minimal set of instructions. Currently, it's pretty obvious that what you're reading isn't actually a crochet pattern, but in the future, I would like for a Yarnball program to be indistinguishable from a real crochet pattern.
+This is just a fun little side project and doesn't implement anything particularly novel. Yarnball programs are also fairly distinguishable from real crochet patterns. Otherwise, it is technically totally turing complete and pretty fun! 
 
 ## What is Yarnball?
 
@@ -11,14 +11,15 @@ In Yarnball, operations are expressed using crochet terminology:
 - **pic (picot stitch):** Pops a value and prints it as a character.
 - **yo (yarn over):** Pops a value and prints it as a number.
 - **fo (finish off):** Immediately halts program execution.
-- **subpattern**: A reusable sequence of instructions that can be invoked with **use** (like a function call).
+- **stitch**: Defines a reusable stitch pattern with `stitch name = (...)`, called by writing the name (or `use name`).
+- **repeat**: Uses crochet-style blocks like `* ... * repeat while/until` or `* ... * repeat 3`.
 - **AND MORE!**
 
-Other instructions manipulate the stack (e.g., **dc**, **bob**, **hdc**) or control the flow with loops (`rep`) and conditionals (`if`). You can even define reusable stitch patterns with subpattern definitions and invoke them using **use**.
+Other instructions manipulate the stack (e.g., **dc**, **bob**, **hdc**) or control the flow with loops (`repeat`) and conditionals (`if`).
 
 ## Getting Started
 
-To run a Yarnball program, use the command line. For example, to run the [fib.yarn](examples/fib.yarn) example, execute:
+To run a Yarnball program, use the command line. For example, to run the [loop_counter.yarn](examples/loop_counter.yarn) example, execute:
 
 ```sh
 make
@@ -29,6 +30,13 @@ If you prefer an interactive environment, start the REPL by running:
 
 ```sh
 make repl
+```
+
+or 
+
+```sh
+make # to build
+./yarnball
 ```
 
 ## Repository Structure
