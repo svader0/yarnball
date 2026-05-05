@@ -1,25 +1,11 @@
 PYRAMID BRUNCH TOTE!
 
-This stylish tote bag features a pyramid design! 
-The base of the pyramid is is determined by the initial chain length, 
-and each row decreases in width by one stitch until it reaches the top.
-
-ABBREVIATIONS:
-
-ch = "chain"
-hdc = "half double crochet"
-pic = "picot stitch"
-rep = "repeat"
-
-STITCH GUIDE:
-
-subpattern printrow = (
-    Row 1: sl st * ch 42 pic ch 32 pic ; rep from * 
-    Row 2: sc 
-)
+This pattern prints a small triangle using repeated stitches.
 
 INSTRUCTIONS:
 
-Row 1: ch 25        # Base width
-Row 2: sl st
-Row 3: * sl st use printrow ch 10 pic sl st ch 1 hdc; rep from *
+Row 1: * ch 42 pic * repeat 5, ch 10 pic
+Row 2: * ch 42 pic * repeat 4, ch 10 pic
+Row 3: * ch 42 pic * repeat 3, ch 10 pic
+Row 4: * ch 42 pic * repeat 2, ch 10 pic
+Row 5: * ch 42 pic * repeat 1, ch 10 pic

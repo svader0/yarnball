@@ -1,0 +1,37 @@
+COLLATZ MITTEN!
+
+This pattern prints the Collatz sequence for a starting number.
+
+STITCH GUIDE:
+
+stitch collatzstep = (
+    sl st, then yo
+    ch 32, pic, sl st
+    ch 1, eq 
+    if sc, then ch 0
+    else
+        sl st then ch 2
+        cl
+        if
+            sl st
+            ch 3
+            dc
+            inc
+            swap
+            sc
+        else
+            sl st
+            ch 2
+            tr
+            swap
+            sc
+        end
+    end
+)
+
+INSTRUCTIONS:
+
+Row 1: ch 3732423
+Row 2: * collatzstep * repeat while
+Row 3: ch 10 pic
+Row 4: fo

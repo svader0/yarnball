@@ -36,7 +36,7 @@ func (p *Preprocessor) Process(input string) (string, error) {
 
 		// Commas are just to make things look nice, currently serve no other purpose---ignore them.
 		line = strings.ReplaceAll(line, ",", "")
-		line := strings.TrimSpace(line)
+		line = strings.TrimSpace(line)
 
 		// If the line is empty, a comment, or exactly "INSTRUCTIONS:" leave an empty line to preserve line numbers.
 		if line == "" || strings.HasPrefix(line, "#") || strings.EqualFold(line, "INSTRUCTIONS:") {

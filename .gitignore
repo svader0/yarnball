@@ -1,6 +1,7 @@
 # Binaries
 *.exe
 *.o
+./yarnball
 # Build directories
 bin/
 

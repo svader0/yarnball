@@ -1,17 +1,9 @@
 package parser
 
-import (
-	"strings"
-
-	"github.com/svader0/yarnball/pkg/lexer"
-)
-
 /*
 	The contents of this file define the abstract syntax tree (AST) we are going
 	to use for Yarnball. Each node represents a specific part of the Yarnball
-	program structure, like instructions, subpatterns, and their definitions.
-	The AST is used to represent the parsed program in a structure that makes it
-	easy to analyze and evaluate.
+	program structure, like instructions, stitch definitions, and blocks.
 */
 
 // base interface for all AST nodes.
@@ -24,7 +16,7 @@ type Program struct {
 	Instructions []Instruction
 }
 
-// represents one “stitch” or a rep‐block.
+// represents one “stitch” or a repeat block.
 type Instruction interface {
 	Node
 	instructionNode()
@@ -39,33 +31,39 @@ type SimpleInstr struct {
 func (si *SimpleInstr) instructionNode()     {}
 func (si *SimpleInstr) TokenLiteral() string { return si.Token }
 
-// rep [<count>] (<instr…>)
-type RepInstr struct {
-	CountExpr string        // literal count or empty = dynamic
-	Body      []Instruction // nested instructions
+type RepeatMode int
+
+const (
+	RepeatCount RepeatMode = iota
+	RepeatUntil
+	RepeatWhile
+)
+
+// RepeatInstr represents a repeat block.
+type RepeatInstr struct {
+	Mode  RepeatMode
+	Count int
+	Body  []Instruction
 }
 
-func (ri *RepInstr) instructionNode()     {}
-func (ri *RepInstr) TokenLiteral() string { return strings.ToLower(lexer.REP) }
+func (ri *RepeatInstr) instructionNode()     {}
+func (ri *RepeatInstr) TokenLiteral() string { return "repeat" }
 
-// Represents a subpattern definition, which stores the name of the subpattern,
-// its parameters (it just pushes that number), and the body of instructions that make up the subpattern.
-type SubpatternDef struct {
-	Name   string
-	Params []string
-	Body   []Instruction
-}
-
-func (*SubpatternDef) instructionNode()        {}
-func (pd *SubpatternDef) TokenLiteral() string { return strings.ToLower(lexer.SUBPATTERN) }
-
-type UseInstr struct {
+// StitchDef defines a reusable stitch pattern.
+type StitchDef struct {
 	Name string
-	Args []string
+	Body []Instruction
 }
 
-func (*UseInstr) instructionNode()        {}
-func (ui *UseInstr) TokenLiteral() string { return strings.ToLower(lexer.USE) }
+func (*StitchDef) instructionNode()        {}
+func (sd *StitchDef) TokenLiteral() string { return "stitch" }
+
+type CallInstr struct {
+	Name string
+}
+
+func (*CallInstr) instructionNode()        {}
+func (ci *CallInstr) TokenLiteral() string { return ci.Name }
 
 type IfInstr struct {
 	IfBody   []Instruction // instructions to execute if condition is true

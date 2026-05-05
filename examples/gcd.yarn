@@ -1,0 +1,24 @@
+This pattern computes the greatest common divisor of two numbers using Euclid's subtraction algorithm.
+
+STITCH GUIDE:
+
+stitch gcdstep = (
+    over
+    pick 1
+    >
+    if
+        swap
+        over
+        hdc
+        swap
+    else
+        over
+        hdc
+    end
+)
+
+INSTRUCTIONS:
+
+ch 48, ch 18
+* gcdstep * repeat while
+sc yo, then fo
