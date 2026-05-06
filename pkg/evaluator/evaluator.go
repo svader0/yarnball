@@ -392,9 +392,6 @@ func (e *Evaluator) execRepeat(ri *parser.RepeatInstr) error {
 	switch ri.Mode {
 	case parser.RepeatCount:
 		for i := 0; i < ri.Count; i++ {
-			if err := e.checkStep(); err != nil {
-				return err
-			}
 			for _, instr := range ri.Body {
 				if err := e.exec(instr); err != nil {
 					return err
@@ -410,9 +407,6 @@ func (e *Evaluator) execRepeat(ri *parser.RepeatInstr) error {
 			if cond != 0 {
 				break
 			}
-			if err := e.checkStep(); err != nil {
-				return err
-			}
 			for _, instr := range ri.Body {
 				if err := e.exec(instr); err != nil {
 					return err
@@ -427,9 +421,6 @@ func (e *Evaluator) execRepeat(ri *parser.RepeatInstr) error {
 			}
 			if cond == 0 {
 				break
-			}
-			if err := e.checkStep(); err != nil {
-				return err
 			}
 			for _, instr := range ri.Body {
 				if err := e.exec(instr); err != nil {

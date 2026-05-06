@@ -29,9 +29,9 @@ func (p *Parser) nextToken() {
 func (p *Parser) ParseProgram() (*Program, error) {
 	prog := &Program{}
 	for p.cur.Type != lexer.EOF {
-		if p.cur.Type == lexer.FILLER {
-			p.nextToken()
-			continue
+		p.skipFillers()
+		if p.cur.Type == lexer.EOF {
+			break
 		}
 		instr, err := p.parseInstruction()
 		if err != nil {
@@ -126,9 +126,9 @@ func (p *Parser) parseStitchDef() (Instruction, error) {
 
 	// Parse instructions until closing ')'
 	for p.cur.Type != lexer.RPAREN && p.cur.Type != lexer.EOF {
-		if p.cur.Type == lexer.FILLER {
-			p.nextToken()
-			continue
+		p.skipFillers()
+		if p.cur.Type == lexer.RPAREN || p.cur.Type == lexer.EOF {
+			break
 		}
 		instr, err := p.parseInstruction()
 		if err != nil {
@@ -165,9 +165,9 @@ func (p *Parser) parseIf() (Instruction, error) {
 	var ifBody []Instruction
 	// Parse IF branch until we hit ELSE or END
 	for p.cur.Type != lexer.ELSE && p.cur.Type != lexer.END && p.cur.Type != lexer.EOF {
-		if p.cur.Type == lexer.FILLER {
-			p.nextToken()
-			continue
+		p.skipFillers()
+		if p.cur.Type == lexer.ELSE || p.cur.Type == lexer.END || p.cur.Type == lexer.EOF {
+			break
 		}
 		instr, err := p.parseInstruction()
 		if err != nil {
@@ -183,9 +183,9 @@ func (p *Parser) parseIf() (Instruction, error) {
 	if p.cur.Type == lexer.ELSE {
 		p.nextToken() // consume 'else'
 		for p.cur.Type != lexer.END && p.cur.Type != lexer.EOF {
-			if p.cur.Type == lexer.FILLER {
-				p.nextToken()
-				continue
+			p.skipFillers()
+			if p.cur.Type == lexer.END || p.cur.Type == lexer.EOF {
+				break
 			}
 			instr, err := p.parseInstruction()
 			if err != nil {
@@ -207,7 +207,7 @@ func (p *Parser) parseIf() (Instruction, error) {
 	return &IfInstr{IfBody: ifBody, ElseBody: elseBody}, nil
 }
 
-// Handles both
+// parseRepeatBlock handles both * ... * and [ ... ] repeat blocks.
 func (p *Parser) parseRepeatBlock() (Instruction, error) {
 	startToken := p.cur.Type
 	endToken := startToken
@@ -219,9 +219,9 @@ func (p *Parser) parseRepeatBlock() (Instruction, error) {
 	p.nextToken() // consume '*' or '['
 
 	for p.cur.Type != endToken && p.cur.Type != lexer.EOF {
-		if p.cur.Type == lexer.FILLER {
-			p.nextToken()
-			continue
+		p.skipFillers()
+		if p.cur.Type == endToken || p.cur.Type == lexer.EOF {
+			break
 		}
 		instr, err := p.parseInstruction()
 		if err != nil {

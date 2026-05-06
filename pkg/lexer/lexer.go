@@ -132,7 +132,7 @@ type Lexer struct {
 // New initializes a lexer for the given input.
 func New(input string) *Lexer {
 	// remove UTF-8 BOM if present
-	strings.TrimPrefix(input, "\uFEFF")
+	input = strings.TrimPrefix(input, "\uFEFF")
 
 	// normalize non-breaking spaces -> regular spaces
 	input = strings.ReplaceAll(input, "\u00A0", " ")
